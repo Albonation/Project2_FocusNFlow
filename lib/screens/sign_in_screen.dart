@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/registration_login_service.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -11,21 +12,21 @@ class _SignInScreenState extends State<SignInScreen> {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
+  final RegistrationLoginService authService = 
+    RegistrationLoginService();
+  
+  void login(){
+    authService.loginUser(
+      username: usernameController.text.trim(),
+      password: passwordController.text.trim(),
+    );
+  }
+
   @override
   void dispose() {
     usernameController.dispose();
     passwordController.dispose();
     super.dispose();
-  }
-
-  void loginUser() {
-    String username = usernameController.text.trim();
-    String password = passwordController.text.trim();
-
-    debugPrint("Username: $username");
-    debugPrint("Password: $password");
-
-    // Add Firebase login here later
   }
 
   @override
@@ -72,7 +73,7 @@ class _SignInScreenState extends State<SignInScreen> {
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: loginUser,
+                onPressed: login,
                 child: const Text(
                   "Login",
                   style: TextStyle(fontSize: 18),

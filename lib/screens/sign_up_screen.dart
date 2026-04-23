@@ -37,11 +37,40 @@ class _SignUpScreenState extends State<SignUpScreen> {
     // Add Firebase login here later
   }
 
+  void registerUser(){
+    String password = passwordController.text.trim();
+    String confirmPassword = confirmPassController.text.trim();
+
+    if (password.isEmpty || confirmPassword.isEmpty){
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please fill in both password fields"),
+        ),
+      );
+      return;
+    }
+
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Passwords do not match'),
+        ),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Registration Successful'),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Sign In"),
+        title: const Text("Sign Up"),
         centerTitle: true,
       ),
       body: Padding(
@@ -50,7 +79,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text(
-              "Sign In",
+              "Sign Up",
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
@@ -58,6 +87,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
             ),
 
             const SizedBox(height: 40),
+
+            TextField(
+              controller: nameController,
+              decoration: InputDecoration(
+                labelText: "Full Name",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
 
             TextField(
               controller: usernameController,
@@ -88,7 +129,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: loginUser,
+                onPressed: signUp,
                 child: const Text(
                   "Login",
                   style: TextStyle(fontSize: 18),

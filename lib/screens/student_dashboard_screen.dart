@@ -54,7 +54,7 @@ class _StudentDashboardState extends State<StudentDashboardScreen> {
               margin: const EdgeInsets.all(12),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                border: Border.all(Colors.black12),
+                border: Border.all(color: Colors.black12),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -88,7 +88,7 @@ class _StudentDashboardState extends State<StudentDashboardScreen> {
                         return Container(
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            border: Boder.all(color/l Colors.black12),
+                            border: Border.all(color: Colors.black12),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
@@ -114,11 +114,20 @@ class _StudentDashboardState extends State<StudentDashboardScreen> {
                                   horizontal: 10,
                                   vertical: 6,
                                 ),
-                              )
-                            ],)
-                        )
-                      }, ,))
-                ],)
+                                child: const Text(
+                                  "Priority",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

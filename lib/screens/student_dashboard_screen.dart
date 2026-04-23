@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:focus_n_flow/widgets/student_dashboard_widgets/upcoming_study_sessions.dart';
+import 'package:focus_n_flow/widgets/student_dashboard_widgets/task_widget.dart';
 
 class StudentDashboardScreen extends StatefulWidget {
   const StudentDashboardScreen({super.key});
@@ -47,8 +48,7 @@ class _StudentDashboardState extends State<StudentDashboardScreen> {
       body: Column(
         children: [
           // Top 1/3 → Today's Tasks
-          
-
+          Tasks(),
           // Middle Section
           UpcomingStudySessions(),
           //not using const in preparation 

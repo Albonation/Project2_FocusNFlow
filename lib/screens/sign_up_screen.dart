@@ -23,24 +23,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.dispose();
   }
 
-  void signUp() {
+  void registerUser(){
     String fullname = nameController.text.trim();
     String username = usernameController.text.trim();
     String password = passwordController.text.trim();
     String confirmPassword = confirmPassController.text.trim();
 
-    debugPrint("Full Name: $fullname");
-    debugPrint("Username: $username");
-    debugPrint("Password: $password");
-    debugPrint("Confirm Password: $confirmPassword");
-
-    // Add Firebase login here later
-  }
-
-  void registerUser(){
-    String password = passwordController.text.trim();
-    String confirmPassword = confirmPassController.text.trim();
-
+    
     if (password.isEmpty || confirmPassword.isEmpty){
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -64,6 +53,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
         content: Text('Registration Successful'),
       ),
     );
+
+    debugPrint("Full Name: $fullname");
+    debugPrint("Username: $username");
+    debugPrint("Password: $password");
+    debugPrint("Confirm Password: $confirmPassword");
+
   }
 
   @override
@@ -123,6 +118,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
             ),
 
+            const SizedBox(height: 20),
+
+            TextField(
+              controller: confirmPassController,
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: "Confirm Password",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+
             const SizedBox(height: 30),
 
             SizedBox(
@@ -131,7 +139,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               child: ElevatedButton(
                 onPressed: signUp,
                 child: const Text(
-                  "Login",
+                  "Sign Up",
                   style: TextStyle(fontSize: 18),
                 ),
               ),

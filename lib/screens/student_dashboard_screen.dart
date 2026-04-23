@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:focus_n_flow/widgets/student_dashboard_widgets/upcoming_study_sessions.dart';
 
 class StudentDashboardScreen extends StatefulWidget {
   const StudentDashboardScreen({super.key});
@@ -50,87 +51,82 @@ class _StudentDashboardState extends State<StudentDashboardScreen> {
             flex: 1,
             child: Container(
               width: double.infinity,
-              margin: const EdgeInsets.all(8),
+              margin: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.black),
-                borderRadius: BorderRadius.circular(12),
+                border: Border.all(Colors.black12),
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: const Center(
-                child: Text("Today's Tasks"),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  //Section title
+                  const Text(
+                    "Today's Tasks",
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  //Debug List
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: 4,
+                      separatorBuilder: (context, index) =>
+                        const SizedBox(height: 10),
+                      itemBuilder: (context, index) {
+                        final tasks = [
+                          'Finish Flutter Assignment',
+                          'Review CyberSecurity Notes',
+                          'Attend Group Study Session',
+                          'Submit Weekly Planner'
+                        ];
+
+                        return Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            border: Boder.all(color/l Colors.black12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              //Checkbox Icon
+                              const Icon(Icons.check_circle_outline),
+
+                              const SizedBox(height: 12),
+
+                              //Task name
+                              Expanded(
+                                child: Text(
+                                  tasks[index],
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+
+                              //Debug Priority Label
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                              )
+                            ],)
+                        )
+                      }, ,))
+                ],)
               ),
             ),
           ),
 
           // Middle Section
-          Expanded(
-            flex: 1,
-            child: SizedBox(
-              width: double.infinity,
-              child: Column(
-                children: [
-                  //Subtitle
-                  const SizedBox(height: 15),
-                  const Text(
-                    "Upcoming Study Sessions",
-                    style: TextStyle( 
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-
-                  //List of study sessions
-                  Expanded(
-                    child: ListView.separated(
-                      itemCount: 5, //debuging data
-                      separatorBuilder: (context, index) => const Divider(
-                        thickness: 1,
-                      ),
-                      itemBuilder: (context, index){
-                        return ListTile(
-                          title: Text("Study Session ${index + 1}"),
-
-                          //Tap for details popup
-                          onTap: () {
-                            showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: Text(
-                                  "Study Session ${index + 1}",
-                                ),
-                                content: const Text(
-                                  "People Joined: 4\n\nDescription: Quick Review"
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: (){
-                                      Navigator.pop(context);
-                                    },
-                                    child: const Text("Close"),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-
-                          //Join Button
-                          trailing: ElevatedButton(
-                            onPressed: (){
-                              debugPrint(
-                                "Redirect to Study Session ${index + 1}",
-                              );
-                            },
-                            child: const Text("Join"),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          UpcomingStudySessions(),
+          //not using const in preparation 
+          //for firebase integration
           const SizedBox(height: 25),
 
           // Bottom Section

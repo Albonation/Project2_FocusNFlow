@@ -69,7 +69,7 @@ class _StudentDashboardState extends State<StudentDashboardScreen> {
               child: Column(
                 children: [
                   //Subtitle
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 15),
                   const Text(
                     "Upcoming Study Sessions",
                     style: TextStyle( 
@@ -85,14 +85,11 @@ class _StudentDashboardState extends State<StudentDashboardScreen> {
                     child: ListView.separated(
                       itemCount: 5, //debuging data
                       separatorBuilder: (context, index) => const Divider(
-                        thickness: 3,
+                        thickness: 1,
                       ),
                       itemBuilder: (context, index){
                         return ListTile(
                           title: Text("Study Session ${index + 1}"),
-                          subtitle: const Text(
-                            "Quick Review", //short description debug 
-                          ),
 
                           //Tap for details popup
                           onTap: () {
@@ -134,6 +131,7 @@ class _StudentDashboardState extends State<StudentDashboardScreen> {
               ),
             ),
           ),
+          const SizedBox(height: 25),
 
           // Bottom Section
           Expanded(

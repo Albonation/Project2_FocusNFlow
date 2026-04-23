@@ -84,7 +84,58 @@ class _StudentDashboardState extends State<StudentDashboardScreen> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
-                ],),
+
+                  //List of study sessions
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: 5, //debuging data
+                      separatorBuilder: (context, index) => const Divider(
+                        thickness: 3,
+                      ),
+                      itemBuilder: (context, index){
+                        return ListTile(
+                          title: Text("Study Session ${index + 1}"),
+                          subtitle: const Text(
+                            "Quick Review", //short description debug 
+                          ),
+
+                          //Tap for details popup
+                          onTap: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: Text(
+                                  "Study Session ${index + 1}",
+                                ),
+                                content: const Text(
+                                  "People Joined: 4\n\nDescription: Quick Review"
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: (){
+                                      Navigator.pop(context);
+                                    },
+                                    child: const Text("Close"),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+
+                          //Join Button
+                          trailing: ElevatedButton(
+                            onPressed: (){
+                              debugPrint(
+                                "Redirect to Study Session ${index + 1}",
+                              );
+                            },
+                            child: const Text("Join"),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

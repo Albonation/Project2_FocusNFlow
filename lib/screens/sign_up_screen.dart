@@ -93,7 +93,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   TextField(
                     controller: emailController,
                     decoration: InputDecoration(
-                      labelText: "Username",
+                      labelText: "Email",
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),

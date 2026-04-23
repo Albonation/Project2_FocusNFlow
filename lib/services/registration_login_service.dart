@@ -16,6 +16,19 @@ class RegistrationLoginService {
     required String password,
     required String confirmPassword,
   }) { 
+    //Check for correct field entries
+    if (fullname.isEmpty){
+      return "Please enter your full name";
+    }
+
+    if (email.isEmpty){
+      return "Please enter your email";
+    }
+
+    if (!email.trim().toLowerCase().endsWith("@student.gsu.edu")){
+      return "Please use your GSU student email";
+    }
+
     if (password.isEmpty || confirmPassword.isEmpty) {
       return "Please fill in both password fields";
     }

@@ -71,8 +71,20 @@ class _StudentDashboardState extends State<StudentDashboardScreen> {
                 border: Border.all(color: Colors.black),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Center(
-                child: Text("Section 2"),
+              child: Column(
+                children: [
+                  //Subtitle
+                  const SizedBox(height: 10),
+                  const Text(
+                    "Upcoming Study Sessions",
+                    style: TextStyle( 
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                ],),
               ),
             ),
           ),

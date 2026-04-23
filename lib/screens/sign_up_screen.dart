@@ -23,12 +23,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.dispose();
   }
 
-  void loginUser() {
+  void signUp() {
+    String fullname = nameController.text.trim();
     String username = usernameController.text.trim();
     String password = passwordController.text.trim();
+    String confirmPassword = confirmPassController.text.trim();
 
+    debugPrint("Full Name: $fullname");
     debugPrint("Username: $username");
     debugPrint("Password: $password");
+    debugPrint("Confirm Password: $confirmPassword");
 
     // Add Firebase login here later
   }

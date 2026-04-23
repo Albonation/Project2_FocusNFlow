@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:focus_n_flow/screens/sign_in_screen.dart';
 import 'package:focus_n_flow/services/registration_login_service.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -128,6 +129,22 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         "Sign Up",
                         style: TextStyle(fontSize: 18),
                       ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SignInScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      "Already have an account? Sign In",
                     ),
                   ),
                 ],

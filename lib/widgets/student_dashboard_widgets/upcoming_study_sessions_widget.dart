@@ -5,72 +5,74 @@ class UpcomingStudySessions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      flex: 1,
-      child: SizedBox(
-        width: double.infinity,
-        child: Column(
-          children: [
-            const SizedBox(height: 15),
+    final sessions = List.generate(
+      10,
+      (index) => {
+        "title": "Study Session ${index + 1}",
+        "people": 4,
+        "description": "Quick Review",
+      },
+    );
 
-            const Text(
-              "Upcoming Study Sessions",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          const Text(
+            "Upcoming Study Sessions",
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
             ),
+          ),
 
-            const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
-            Expanded(
-              child: ListView.separated(
-                itemCount: 5,
-                separatorBuilder: (context, index) =>
-                    const Divider(thickness: 1),
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Text(
-                      "Study Session ${index + 1}",
-                    ),
+          // SScrollable area
+          SizedBox(
+            height: 250, 
+            child: ListView.separated(
+              itemCount: sessions.length,
+              separatorBuilder: (context, index) =>
+                  const Divider(thickness: 1),
+              itemBuilder: (context, index) {
+                final session = sessions[index];
 
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: Text(
-                            "Study Session ${index + 1}",
-                          ),
-                          content: const Text(
-                            "People Joined: 4\n\nDescription: Quick Review",
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                              child: const Text("Close"),
-                            ),
-                          ],
+                return ListTile(
+                  title: Text(session["title"] as String),
+
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: Text(session["title"] as String),
+                        content: Text(
+                          "People Joined: ${session["people"]}\n\n"
+                          "Description: ${session["description"]}",
                         ),
-                      );
-                    },
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text("Close"),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
 
-                    trailing: ElevatedButton(
-                      onPressed: () {
-                        debugPrint(
-                          "Redirect to Study Session ${index + 1}",
-                        );
-                      },
-                      child: const Text("Join"),
-                    ),
-                  );
-                },
-              ),
+                  trailing: ElevatedButton(
+                    onPressed: () {
+                      debugPrint("Join ${session["title"]}");
+                    },
+                    child: const Text("Join"),
+                  ),
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -45,32 +45,40 @@ class _StudentDashboardState extends State<StudentDashboardScreen> {
         title: Text("Welcome, $fullName"),
         centerTitle: true,
       ),
-      body: Column(
-        children: [
-          // Top 1/3 → Today's Tasks
-          Tasks(),
-          // Middle Section
-          UpcomingStudySessions(),
-          //not using const in preparation 
-          //for firebase integration
-          const SizedBox(height: 25),
 
-          // Bottom Section
-          Expanded(
-            flex: 1,
-            child: Container(
-              width: double.infinity,
-              margin: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.black),
-                borderRadius: BorderRadius.circular(12),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            children: [
+              // Today's Tasks
+              Tasks(),
+
+              const SizedBox(height: 20),
+
+              // Upcoming Study Sessions
+              const UpcomingStudySessions(),
+
+              const SizedBox(height: 20),
+
+              // Section 3 (placeholder)
+              Container(
+                width: double.infinity,
+                height: 200,
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.black),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Center(
+                  child: Text("Section 3"),
+                ),
               ),
-              child: const Center(
-                child: Text("Section 3"),
-              ),
-            ),
+
+              const SizedBox(height: 20),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

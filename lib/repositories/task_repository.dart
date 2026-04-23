@@ -28,7 +28,23 @@ class TaskRepository {
   //read tasks, or stream tasks since using firestore
   //get all tasks for a specific user
   Stream<List<Task>> getTasksForUser(String userId) {
-    throw UnimplementedError();
+    try {
+      return _tasksCollection
+          .where('user_id', isEqualTo: userId)
+          .orderBy('deadline')
+          .snapshots()
+          .map((snapshot) {
+            debugPrint(
+              '[TASK_REPO] Fetched ${snapshot.docs.length} tasks for user $userId',
+            );
+            return snapshot.docs
+                .map((doc) => Task.fromMap(doc.data(), id: doc.id))
+                .toList();
+          });
+    } catch (e) {
+      debugPrint('[TASK_REPO] Failed to get tasks for user $userId: $e');
+      rethrow;
+    }
   }
 
   //get a specific task by id

@@ -49,7 +49,20 @@ class TaskRepository {
 
   //get a specific task by id
   Future<Task?> getTaskById(String taskId) async {
-    throw UnimplementedError();
+    try {
+      final doc = await _tasksCollection.doc(taskId).get();
+
+      if (!doc.exists || doc.data() == null) {
+        debugPrint('[TASK_REPO] Task not found: $taskId');
+        return null;
+      }
+
+      debugPrint('[TASK_REPO] Fetched task: ${doc.id}');
+      return Task.fromMap(doc.data()!, id: doc.id);
+    } catch (e) {
+      debugPrint('[TASK_REPO] Failed to fetch task $taskId: $e');
+      rethrow;
+    }
   }
 
   //update task

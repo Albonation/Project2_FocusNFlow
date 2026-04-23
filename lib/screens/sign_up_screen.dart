@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:focus_n_flow/services/registration_login_service.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -24,41 +25,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   void registerUser(){
-    String fullname = nameController.text.trim();
-    String username = usernameController.text.trim();
-    String password = passwordController.text.trim();
-    String confirmPassword = confirmPassController.text.trim();
+    final service = RegistrationLoginService();
 
-    
-    if (password.isEmpty || confirmPassword.isEmpty){
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please fill in both password fields"),
-        ),
-      );
-      return;
-    }
+    final error = service.validateRegistration(
+      fullname: nameController.text.trim(), 
+      username: usernameController.text.trim(), 
+      password: passwordController.text.trim(), 
+      confirmPassword: confirmPassController.text.trim()
+    );
 
-    if (password != confirmPassword) {
+    if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Passwords do not match'),
-        ),
+        SnackBar(content: Text(error)),
       );
       return;
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Registration Successful'),
-      ),
+      const SnackBar(content: Text("Registration Successful")),
     );
-
-    debugPrint("Full Name: $fullname");
-    debugPrint("Username: $username");
-    debugPrint("Password: $password");
-    debugPrint("Confirm Password: $confirmPassword");
-
   }
 
   @override

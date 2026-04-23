@@ -73,13 +73,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
-              "Sign Up",
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
 
             const SizedBox(height: 40),
 
@@ -137,7 +130,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: signUp,
+                onPressed: registerUser,
                 child: const Text(
                   "Sign Up",
                   style: TextStyle(fontSize: 18),

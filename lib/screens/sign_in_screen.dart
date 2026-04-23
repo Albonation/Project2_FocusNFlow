@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:focus_n_flow/screens/sign_up_screen.dart';
+import 'package:focus_n_flow/widgets/login_signup_widgets/sign_in_widget.dart';
 import '../services/registration_login_service.dart';
 
 class SignInScreen extends StatefulWidget {
@@ -47,65 +47,11 @@ class _SignInScreenState extends State<SignInScreen> {
                   MediaQuery.of(context).padding.top,
             ),
             child: IntrinsicHeight(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 40),
-
-                  TextField(
-                    controller: emailController,
-                    decoration: InputDecoration(
-                      labelText: "Email",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  TextField(
-                    controller: passwordController,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: "Password",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: login,
-                      child: const Text(
-                        "Login",
-                        style: TextStyle(fontSize: 18),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const SignUpScreen(),
-                        ),
-                      );
-                    },
-                    child: const Text(
-                      "Don't have an account? Sign Up",
-                    ),
-                  ),
-                ],
-              ),
+              child: SignInForm(
+                emailController: emailController,
+                passwordController: passwordController,
+                login: login
+              )
             ),
           ),
         ),

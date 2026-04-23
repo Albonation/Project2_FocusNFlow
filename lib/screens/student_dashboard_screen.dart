@@ -64,13 +64,8 @@ class _StudentDashboardState extends State<StudentDashboardScreen> {
           // Middle Section
           Expanded(
             flex: 1,
-            child: Container(
+            child: SizedBox(
               width: double.infinity,
-              margin: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.black),
-                borderRadius: BorderRadius.circular(12),
-              ),
               child: Column(
                 children: [
                   //Subtitle

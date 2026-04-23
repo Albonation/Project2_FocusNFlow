@@ -12,7 +12,7 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController nameController = TextEditingController();
-  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPassController = TextEditingController();
 
@@ -20,7 +20,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   void dispose() {
     nameController.dispose();
-    usernameController.dispose();
+    emailController.dispose();
     passwordController.dispose();
     confirmPassController.dispose();
     super.dispose();
@@ -31,7 +31,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     final error = service.validateRegistration(
       fullname: nameController.text.trim(), 
-      username: usernameController.text.trim(), 
+      email: emailController.text.trim(), 
       password: passwordController.text.trim(), 
       confirmPassword: confirmPassController.text.trim()
     );
@@ -91,7 +91,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   const SizedBox(height: 20),
 
                   TextField(
-                    controller: usernameController,
+                    controller: emailController,
                     decoration: InputDecoration(
                       labelText: "Username",
                       border: OutlineInputBorder(

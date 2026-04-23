@@ -10,7 +10,7 @@ class SignInScreen extends StatefulWidget {
 }
 
 class _SignInScreenState extends State<SignInScreen> {
-  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
   final RegistrationLoginService authService = 
@@ -18,14 +18,14 @@ class _SignInScreenState extends State<SignInScreen> {
   
   void login(){
     authService.loginUser(
-      username: usernameController.text.trim(),
+      email: emailController.text.trim(),
       password: passwordController.text.trim(),
     );
   }
 
   @override
   void dispose() {
-    usernameController.dispose();
+    emailController.dispose();
     passwordController.dispose();
     super.dispose();
   }
@@ -53,9 +53,9 @@ class _SignInScreenState extends State<SignInScreen> {
                   const SizedBox(height: 40),
 
                   TextField(
-                    controller: usernameController,
+                    controller: emailController,
                     decoration: InputDecoration(
-                      labelText: "Username",
+                      labelText: "Email",
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),

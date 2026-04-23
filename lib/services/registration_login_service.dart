@@ -3,16 +3,16 @@ import 'package:flutter/material.dart';
 class RegistrationLoginService {
 
   void loginUser({
-    required String username,
+    required String email,
     required String password,
   }) {
-    debugPrint("Username: $username");
+    debugPrint("Username: $email");
     debugPrint("Password: $password");
   }
 
   String? validateRegistration({
     required String fullname,
-    required String username,
+    required String email,
     required String password,
     required String confirmPassword,
   }) { 
@@ -25,7 +25,7 @@ class RegistrationLoginService {
     }
 
     debugPrint("Full Name: $fullname");
-    debugPrint("Username: $username");
+    debugPrint("Username: $email");
     debugPrint("Password: $password");
     debugPrint("Confirm Password: $confirmPassword");
 

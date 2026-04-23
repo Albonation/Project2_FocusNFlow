@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:focus_n_flow/screens/sign_in_screen.dart';
 import 'package:focus_n_flow/screens/student_dashboard_screen.dart';
 import 'package:focus_n_flow/services/registration_login_service.dart';
+import '../widgets/login_signup_widgets/sign_up_widget.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -11,11 +11,10 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPassController = TextEditingController();
-
+  final nameController = TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final confirmPassController = TextEditingController();
 
   @override
   void dispose() {
@@ -26,14 +25,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.dispose();
   }
 
-  void registerUser(){
+  void registerUser() {
     final service = RegistrationLoginService();
 
     final error = service.validateRegistration(
-      fullname: nameController.text.trim(), 
-      email: emailController.text.trim(), 
-      password: passwordController.text.trim(), 
-      confirmPassword: confirmPassController.text.trim()
+      fullname: nameController.text.trim(),
+      email: emailController.text.trim(),
+      password: passwordController.text.trim(),
+      confirmPassword: confirmPassController.text.trim(),
     );
 
     if (error != null) {
@@ -72,90 +71,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   MediaQuery.of(context).padding.top,
             ),
             child: IntrinsicHeight(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-
-                  const SizedBox(height: 40),
-
-                  TextField(
-                    controller: nameController,
-                    decoration: InputDecoration(
-                      labelText: "Full Name",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  TextField(
-                    controller: emailController,
-                    decoration: InputDecoration(
-                      labelText: "Email",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  TextField(
-                    controller: passwordController,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: "Password",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  TextField(
-                    controller: confirmPassController,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: "Confirm Password",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: registerUser,
-                      child: const Text(
-                        "Sign Up",
-                        style: TextStyle(fontSize: 18),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const SignInScreen(),
-                        ),
-                      );
-                    },
-                    child: const Text(
-                      "Already have an account? Sign In",
-                    ),
-                  ),
-                ],
+              child: SignUpForm(
+                nameController: nameController,
+                emailController: emailController,
+                passwordController: passwordController,
+                confirmPassController: confirmPassController,
+                registerUser: registerUser,
               ),
             ),
           ),

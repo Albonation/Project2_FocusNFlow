@@ -30,7 +30,7 @@ class UpcomingStudySessions extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          // SScrollable area
+          // Scrollable area
           SizedBox(
             height: 250, 
             child: ListView.separated(

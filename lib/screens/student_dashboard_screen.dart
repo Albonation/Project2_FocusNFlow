@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:focus_n_flow/widgets/student_dashboard_widgets/upcoming_study_sessions.dart';
+import 'package:focus_n_flow/widgets/student_dashboard_widgets/upcoming_study_sessions_widget.dart';
 import 'package:focus_n_flow/widgets/student_dashboard_widgets/task_widget.dart';
 
 class StudentDashboardScreen extends StatefulWidget {

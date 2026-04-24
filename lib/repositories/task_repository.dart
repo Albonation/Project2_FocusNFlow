@@ -18,7 +18,7 @@ class TaskRepository {
       DocumentReference<Map<String, dynamic>> docRef = await _tasksCollection
           .add(task.toMap());
       debugPrint('[TASK_REPO] Added task: ${docRef.id}');
-      return docRef.id; //
+      return docRef.id;
     } catch (e) {
       debugPrint('[TASK_REPO] Failed to add task: $e');
       rethrow;
@@ -67,12 +67,28 @@ class TaskRepository {
 
   //update task
   Future<void> updateTask(Task task) async {
-    throw UnimplementedError();
+    if (task.id == null || task.id!.trim().isEmpty) {
+      throw ArgumentError('Task must have a valid id before updateTask().');
+    }
+
+    try {
+      await _tasksCollection.doc(task.id).update(task.toMap());
+      debugPrint('[TASK_REPO] Updated task: ${task.id}');
+    } catch (e) {
+      debugPrint('[TASK_REPO] Failed to update task ${task.id}: $e');
+      rethrow;
+    }
   }
 
   //delete task
   Future<void> deleteTask(String taskId) async {
-    throw UnimplementedError();
+    try {
+      await _tasksCollection.doc(taskId).delete();
+      debugPrint('[TASK_REPO] Deleted task: $taskId');
+    } catch (e) {
+      debugPrint('[TASK_REPO] Failed to delete task $taskId: $e');
+      rethrow;
+    }
   }
 
   //some maybe methods

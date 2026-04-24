@@ -65,6 +65,30 @@ class TaskRepository {
     }
   }
 
+  //get tasks for a specific course for a user
+  Stream<List<Task>> getTasksForCourse(String userId, String courseId) {
+    try {
+      return _tasksCollection
+          .where('user_id', isEqualTo: userId)
+          .where('course_id', isEqualTo: courseId)
+          .orderBy('deadline')
+          .snapshots()
+          .map((snapshot) {
+            debugPrint(
+              '[TASK_REPO] Fetched ${snapshot.docs.length} tasks for user $userId and course $courseId',
+            );
+            return snapshot.docs
+                .map((doc) => Task.fromMap(doc.data(), id: doc.id))
+                .toList();
+          });
+    } catch (e) {
+      debugPrint(
+        '[TASK_REPO] Failed to get tasks for user $userId and course $courseId: $e',
+      );
+      rethrow;
+    }
+  }
+
   //update task
   Future<void> updateTask(Task task) async {
     if (task.id == null || task.id!.trim().isEmpty) {
@@ -91,12 +115,60 @@ class TaskRepository {
     }
   }
 
+  //mark a task as completed
+  Future<void> markTaskCompleted(String taskId) async {
+    final now = DateTime.now().toIso8601String();
+
+    try {
+      await _tasksCollection.doc(taskId).update({
+        'status': 'completed',
+        'completed_at': now,
+        'updated_at': now,
+      });
+      debugPrint('[TASK_REPO] Marked task as completed: $taskId');
+    } catch (e) {
+      debugPrint('[TASK_REPO] Failed to mark task $taskId as completed: $e');
+      rethrow;
+    }
+  }
+
+  //mark a task as in progress
+  Future<void> markTaskInProgress(String taskId) async {
+    final now = DateTime.now().toIso8601String();
+
+    try {
+      await _tasksCollection.doc(taskId).update({
+        'status': 'in_progress',
+        'updated_at': now,
+      });
+      debugPrint('[TASK_REPO] Marked task as in progress: $taskId');
+    } catch (e) {
+      debugPrint('[TASK_REPO] Failed to mark task $taskId as in progress: $e');
+      rethrow;
+    }
+  }
+
+  //reopen a completed task
+  Future<void> reopenTask(String taskId) async {
+    final now = DateTime.now().toIso8601String();
+
+    try {
+      await _tasksCollection.doc(taskId).update({
+        'status': 'pending',
+        'completed_at': null,
+        'updated_at': now,
+      });
+      debugPrint('[TASK_REPO] Reopened task: $taskId');
+    } catch (e) {
+      debugPrint('[TASK_REPO] Failed to reopen task $taskId: $e');
+      rethrow;
+    }
+  }
+
   //some maybe methods
   /*
 
   //get tasks by status
-
-  //get tasks by course id
 
   //get tasks by deadline
 

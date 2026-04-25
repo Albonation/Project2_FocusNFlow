@@ -12,10 +12,11 @@ class AddEditTaskScreen extends StatefulWidget{
   State<AddEditTaskScreen> createState() => _AddEditTaskScreenState();
 }
 
-class _AddEditTasksScreenState extends State<AddEditTaskScreen>{
+class _AddEditTaskScreenState extends State<AddEditTaskScreen>{
   final repo = TaskRepository();
 
   final titleController = TextEditingController();
+  final courseIDController = TextEditingController();
   final descController = TextEditingController();
   final hoursController = TextEditingController();
 
@@ -30,11 +31,14 @@ class _AddEditTasksScreenState extends State<AddEditTaskScreen>{
     if (isEditMode){
       final task = widget.task!;
       titleController.text = task.title;
+      courseIDController.text = task.courseId;
       descController.text = task.description;
       hoursController.text = task.estimatedHours.toString();
       selectedDate = task.deadline;
     }
   }
+
+  
 
   Future<void> pickDate() async {
     final picked = await showDatePicker(
@@ -66,6 +70,7 @@ class _AddEditTasksScreenState extends State<AddEditTaskScreen>{
     if (isEditMode){
       final updatedTask = widget.task!.copyWith(
         title: titleController.text,
+        courseId: courseIDController.text,
         description: descController.text,
         deadline: selectedDate,
         estimatedHours: double.tryParse(hoursController.text) ?? 0,
@@ -77,6 +82,7 @@ class _AddEditTasksScreenState extends State<AddEditTaskScreen>{
       final newTask = Task(
         userId: user.uid,
         title: titleController.text,
+        courseId: courseIDController.text,
         description: descController.text,
         deadline: selectedDate!,
         estimatedHours: double.tryParse(hoursController.text) ?? 0,
@@ -88,4 +94,60 @@ class _AddEditTasksScreenState extends State<AddEditTaskScreen>{
     if(mounted) Navigator.pop(context);
   }
 
+  @override
+  Widget build(BuildContext context){
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(isEditMode ? "Edit Task" : "Add Task"),
+        centerTitle: true,
+      ),
+      
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            TextField(
+              controller: titleController,
+              decoration: const InputDecoration(labelText: "Title"),
+            ),
+
+            const SizedBox(height: 10),
+
+            TextField(
+              controller: descController,
+              decoration: const InputDecoration(labelText: "Description"),
+            ),
+
+            const SizedBox(height: 20),
+
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    selectedDate == null
+                      ? "No date selected"
+                      : "Deadline: ${selectedDate!.toLocal()}".split(' ')[0],
+                  ),
+                ),
+                TextButton(
+                  onPressed: pickDate,
+                  child: const Text("Pick Date"),
+                ),
+              ],
+            ),
+
+            const Spacer(),
+
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: saveTask,
+                child: Text(isEditMode ? "Update Task" : "Add Task"),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

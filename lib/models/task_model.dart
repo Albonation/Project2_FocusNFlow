@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 enum TaskStatus { pending, inProgress, completed }
 
 extension TaskStatusExtension on TaskStatus {
@@ -112,13 +114,15 @@ class Task {
       'course_id': courseId,
       'title': title,
       'description': description,
-      'deadline': deadline.toIso8601String(),
+      'deadline': Timestamp.fromDate(deadline),
       'estimated_hours': estimatedHours,
       'status': status.value,
       'manual_importance': manualImportance.value,
-      'completed_at': completedAt?.toIso8601String(),
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'completed_at': completedAt != null
+          ? Timestamp.fromDate(completedAt!)
+          : null,
+      'created_at': Timestamp.fromDate(createdAt),
+      'updated_at': Timestamp.fromDate(updatedAt),
     };
   }
 
@@ -129,7 +133,7 @@ class Task {
       courseId: map['course_id'] as String,
       title: map['title'] as String,
       description: (map['description'] as String?) ?? '',
-      deadline: DateTime.parse(map['deadline'] as String),
+      deadline: (map['deadline'] as Timestamp).toDate(),
       estimatedHours: (map['estimated_hours'] as num).toDouble(),
       status: TaskStatusExtension.fromString(
         (map['status'] as String?) ?? 'pending',
@@ -138,13 +142,13 @@ class Task {
         (map['manual_importance'] as String?) ?? 'normal',
       ),
       completedAt: map['completed_at'] != null
-          ? DateTime.parse(map['completed_at'] as String)
+          ? (map['completed_at'] as Timestamp).toDate()
           : null,
       createdAt: map['created_at'] != null
-          ? DateTime.parse(map['created_at'] as String)
+          ? (map['created_at'] as Timestamp).toDate()
           : DateTime.now(),
       updatedAt: map['updated_at'] != null
-          ? DateTime.parse(map['updated_at'] as String)
+          ? (map['updated_at'] as Timestamp).toDate()
           : DateTime.now(),
     );
   }
@@ -202,5 +206,4 @@ class Task {
   bool get isCompleted => status == TaskStatus.completed;
 
   bool get isOverdue => !isCompleted && deadline.isBefore(DateTime.now());
-
 }

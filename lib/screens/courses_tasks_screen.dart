@@ -10,3 +10,20 @@ class CoursesTasksScreen extends StatefulWidget{
   State<CoursesTasksScreen> createState() => _CoursesTasksScreenState();
 }
 
+class _CoursesTasksScreenState extends State<CoursesTasksScreen>{
+  final repo = TaskRepository();
+
+  @override
+  Widget build(BuildContext context){
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return const Scaffold(
+        body: Center(child: Text("No user logged in")),
+      );
+    }
+
+    
+  }
+
+}

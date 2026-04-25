@@ -9,14 +9,15 @@ import '../models/task_model.dart';
 class TaskRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  CollectionReference<Map<String, dynamic>> get _tasksCollection =>
-      _firestore.collection('tasks');
+  CollectionReference<Map<String, dynamic>> _tasksCollection(String userId) =>
+      _firestore.collection('users').doc('userId').collection('tasks');
 
-  //add task and return the generated document ID
+
+  //add task nested in the users collection and return the generated document ID
   Future<String> addTask(Task task) async {
     try {
-      DocumentReference<Map<String, dynamic>> docRef = await _tasksCollection
-          .add(task.toMap());
+      DocumentReference<Map<String, dynamic>> docRef =
+        await _tasksCollection(task.userId).add(task.toMap());
       debugPrint('[TASK_REPO] Added task: ${docRef.id}');
       return docRef.id;
     } catch (e) {
@@ -28,9 +29,7 @@ class TaskRepository {
   //read tasks, or stream tasks since using firestore
   //get all tasks for a specific user
   Stream<List<Task>> getTasksForUser(String userId) {
-    try {
-      return _tasksCollection
-          .where('user_id', isEqualTo: userId)
+      return _tasksCollection(userId)
           .orderBy('deadline')
           .snapshots()
           .map((snapshot) {
@@ -41,16 +40,16 @@ class TaskRepository {
                 .map((doc) => Task.fromMap(doc.data(), id: doc.id))
                 .toList();
           });
-    } catch (e) {
-      debugPrint('[TASK_REPO] Failed to get tasks for user $userId: $e');
-      rethrow;
-    }
+
   }
 
-  //get a specific task by id
-  Future<Task?> getTaskById(String taskId) async {
+  //get a specific task using userId and taskId
+  Future<Task?> getTaskById({
+    required String userId,
+    required String taskId,
+    }) async {
     try {
-      final doc = await _tasksCollection.doc(taskId).get();
+      final doc = await _tasksCollection(userId).doc(taskId).get();
 
       if (!doc.exists || doc.data() == null) {
         debugPrint('[TASK_REPO] Task not found: $taskId');
@@ -66,10 +65,11 @@ class TaskRepository {
   }
 
   //get tasks for a specific course for a user
-  Stream<List<Task>> getTasksForCourse(String userId, String courseId) {
-    try {
-      return _tasksCollection
-          .where('user_id', isEqualTo: userId)
+  Stream<List<Task>> getTasksForCourse({
+    required String userId,
+    required String courseId,
+    }) {
+      return _tasksCollection(userId)
           .where('course_id', isEqualTo: courseId)
           .orderBy('deadline')
           .snapshots()
@@ -81,12 +81,6 @@ class TaskRepository {
                 .map((doc) => Task.fromMap(doc.data(), id: doc.id))
                 .toList();
           });
-    } catch (e) {
-      debugPrint(
-        '[TASK_REPO] Failed to get tasks for user $userId and course $courseId: $e',
-      );
-      rethrow;
-    }
   }
 
   //update task
@@ -96,7 +90,7 @@ class TaskRepository {
     }
 
     try {
-      await _tasksCollection.doc(task.id).update(task.toMap());
+      await _tasksCollection(task.userId).doc(task.id).update(task.toMap());
       debugPrint('[TASK_REPO] Updated task: ${task.id}');
     } catch (e) {
       debugPrint('[TASK_REPO] Failed to update task ${task.id}: $e');
@@ -105,9 +99,12 @@ class TaskRepository {
   }
 
   //delete task
-  Future<void> deleteTask(String taskId) async {
+  Future<void> deleteTask({
+    required String userId,
+    required String taskId,
+  }) async {
     try {
-      await _tasksCollection.doc(taskId).delete();
+      await _tasksCollection(userId).doc(taskId).delete();
       debugPrint('[TASK_REPO] Deleted task: $taskId');
     } catch (e) {
       debugPrint('[TASK_REPO] Failed to delete task $taskId: $e');
@@ -116,12 +113,15 @@ class TaskRepository {
   }
 
   //mark a task as completed
-  Future<void> markTaskCompleted(String taskId) async {
-    final now = DateTime.now().toIso8601String();
+  Future<void> markTaskCompleted({
+    required String userId,
+    required String taskId,
+  }) async {
+    final now = Timestamp.now();
 
     try {
-      await _tasksCollection.doc(taskId).update({
-        'status': 'completed',
+      await _tasksCollection(userId).doc(taskId).update({
+        'status': TaskStatus.completed.value,
         'completed_at': now,
         'updated_at': now,
       });
@@ -133,12 +133,15 @@ class TaskRepository {
   }
 
   //mark a task as in progress
-  Future<void> markTaskInProgress(String taskId) async {
-    final now = DateTime.now().toIso8601String();
+  Future<void> markTaskInProgress({
+    required String userId,
+    required String taskId,
+  }) async {
+    final now = Timestamp.now();
 
     try {
-      await _tasksCollection.doc(taskId).update({
-        'status': 'in_progress',
+      await _tasksCollection(userId).doc(taskId).update({
+        'status': TaskStatus.inProgress.value,
         'updated_at': now,
       });
       debugPrint('[TASK_REPO] Marked task as in progress: $taskId');
@@ -149,12 +152,15 @@ class TaskRepository {
   }
 
   //reopen a completed task
-  Future<void> reopenTask(String taskId) async {
-    final now = DateTime.now().toIso8601String();
+  Future<void> reopenTask({
+    required String userId,
+    required String taskId,
+  }) async {
+    final now = Timestamp.now();
 
     try {
-      await _tasksCollection.doc(taskId).update({
-        'status': 'pending',
+      await _tasksCollection(userId).doc(taskId).update({
+        'status': TaskStatus.pending.value,
         'completed_at': null,
         'updated_at': now,
       });

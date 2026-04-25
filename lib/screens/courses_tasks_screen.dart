@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:focus_n_flow/repositories/task_repository.dart';
 import 'package:focus_n_flow/models/task_model.dart';
+import 'package:focus_n_flow/screens/add_edit_task_screen.dart';
 
 class CoursesTasksScreen extends StatefulWidget {
   const CoursesTasksScreen({super.key});
@@ -71,7 +72,13 @@ class _CoursesTasksScreenState extends State<CoursesTasksScreen> {
                       }
 
                       if (value == "edit") {
-                        // open edit screen later
+                        // open edit screen 
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AddEditTaskScreen(task: task),
+                          ),
+                        );
                       }
                     },
                     itemBuilder: (context) => const [

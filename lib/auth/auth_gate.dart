@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:focus_n_flow/screens/courses_tasks_screen.dart';
 import 'package:focus_n_flow/screens/sign_in_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:focus_n_flow/screens/student_dashboard_screen.dart';
@@ -27,7 +28,7 @@ class AuthGate extends StatelessWidget{
         }
 
         //User is not logged in
-        return const SignInScreen();
+        return const CoursesTasksScreen();
       },
     );
   }

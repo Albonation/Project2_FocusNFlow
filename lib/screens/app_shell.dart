@@ -19,7 +19,7 @@ class _AppShellState extends State<AppShell> {
   void initState(){
     super.initState();
   //Unfinished screens commented out for testing
-    const _screens = [
+    _screens = [
       StudentDashboardScreen(),
       CoursesTasksScreen(),
       //GroupChatScreen(),

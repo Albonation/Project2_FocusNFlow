@@ -23,17 +23,11 @@ class Tasks extends StatelessWidget {
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Center(
-            child: CircularProgressIndicator(),
+            child: Text("No tasks yet"),
           );
         }
 
         final tasks = snapshot.data!;
-
-        if (tasks.isEmpty) {
-          return const Center(
-            child: Text("No tasks yet"),
-          );
-        }
 
         return Container(
           width: double.infinity,

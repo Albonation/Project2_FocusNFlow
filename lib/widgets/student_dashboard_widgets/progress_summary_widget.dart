@@ -25,7 +25,7 @@ class ProgressSummary extends StatelessWidget {
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Center(
-            child: CircularProgressIndicator(),
+            child: Text("No progress yet"),
           );
         }
 

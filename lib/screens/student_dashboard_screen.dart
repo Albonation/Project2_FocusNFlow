@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:focus_n_flow/widgets/student_dashboard_widgets/progress_summary_widget.dart';
 import 'package:focus_n_flow/widgets/student_dashboard_widgets/upcoming_study_sessions_widget.dart';
 import 'package:focus_n_flow/widgets/student_dashboard_widgets/task_widget.dart';
-import 'package:focus_n_flow/models/task_model.dart';
 
 class StudentDashboardScreen extends StatefulWidget {
   const StudentDashboardScreen({super.key});
@@ -15,44 +14,6 @@ class StudentDashboardScreen extends StatefulWidget {
 
 class _StudentDashboardState extends State<StudentDashboardScreen> {
   String fullName = "Student";
-
-  List<Task> tasks = [
-    Task(
-      userId: "demoUser",
-      courseId: "course1",
-      title: "Finish Flutter Assignment",
-      description: "Complete dashboard UI",
-      deadline: DateTime.now(),
-      estimatedHours: 5,
-    ),
-
-    Task(
-      userId: "demoUser",
-      courseId: "course2",
-      title: "Review CyberSecurity Notes",
-      description: "Study firewall concepts",
-      deadline: DateTime(2026, 5, 23, 14, 50),
-      estimatedHours: 3,
-    ),
-
-    Task(
-      userId: "demoUser",
-      courseId: "course3",
-      title: "Attend Group Study Session",
-      description: "Meet with study group",
-      deadline: DateTime(2026, 4, 25, 4, 30),
-      estimatedHours: 4,
-    ),
-
-    Task(
-      userId: "demoUser",
-      courseId: "course4",
-      title: "Submit Weekly Planner",
-      description: "Upload planner to app",
-      deadline: DateTime(2026, 4, 28, 16, 40),
-      estimatedHours: 1,
-    ),
-  ];
 
   @override
   void initState(){
@@ -102,7 +63,7 @@ class _StudentDashboardState extends State<StudentDashboardScreen> {
               const SizedBox(height: 20),
 
               // Progress Summary
-              ProgressSummary(tasks: tasks),
+              ProgressSummary(),
 
               const SizedBox(height: 20),
             ],

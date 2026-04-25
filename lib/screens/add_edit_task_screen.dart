@@ -63,6 +63,29 @@ class _AddEditTasksScreenState extends State<AddEditTaskScreen>{
       return;
     }
 
-    
+    if (isEditMode){
+      final updatedTask = widget.task!.copyWith(
+        title: titleController.text,
+        description: descController.text,
+        deadline: selectedDate,
+        estimatedHours: double.tryParse(hoursController.text) ?? 0,
+        updatedAt: DateTime.now(),
+      );
+
+      await repo.updateTask(updatedTask);
+    } else {
+      final newTask = Task(
+        userId: user.uid,
+        title: titleController.text,
+        description: descController.text,
+        deadline: selectedDate!,
+        estimatedHours: double.tryParse(hoursController.text) ?? 0,
+      );
+
+      await repo.addTask(newTask);
+    }
+
+    if(mounted) Navigator.pop(context);
   }
+
 }

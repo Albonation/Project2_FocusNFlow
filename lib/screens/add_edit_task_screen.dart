@@ -18,4 +18,21 @@ class _AddEditTasksScreenState extends State<AddEditTaskScreen>{
   final titleController = TextEditingController();
   final descController = TextEditingController();
   final hoursController = TextEditingController();
+
+  DateTime? selectedDate;
+
+  bool get isEditMode => widget.task != null;
+
+  @override
+  void initState(){
+    super.initState();
+
+    if (isEditMode){
+      final task = widget.task!;
+      titleController.text = task.title;
+      descController.text = task.description;
+      hoursController.text = task.estimatedHours.toString();
+      selectedDate = task.deadline;
+    }
+  }
 }

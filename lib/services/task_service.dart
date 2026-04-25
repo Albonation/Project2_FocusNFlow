@@ -63,22 +63,24 @@ class TaskService {
 
   //update a task after passing validation checks
   Future<TaskActionResult> saveTaskChanges(Task task) async {
+    validateTaskId(task.id);
     final errors = [
       validateTitle(task.title),
       validateCourseId(task.courseId),
       validateDeadline(task.deadline),
       validateEstimatedHours(task.estimatedHours),
-    ].where((e) => e != null);
+    ].whereType<String>().toList();
 
     if (errors.isNotEmpty) {
       return TaskActionResult(
         success: false,
         updatedTask: task,
-        message: errors.first!,
+        message: errors.join("\n"),
       );
     }
 
-    final updatedTask = task.copyWith(updatedAt: DateTime.now());
+    final updatedTask = task.copyWith(
+      updatedAt: DateTime.now());
 
     await taskRepository.updateTask(updatedTask);
 

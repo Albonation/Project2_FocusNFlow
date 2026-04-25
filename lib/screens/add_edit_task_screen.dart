@@ -15,8 +15,7 @@ class AddEditTaskScreen extends StatefulWidget{
 }
 
 class _AddEditTaskScreenState extends State<AddEditTaskScreen>{
-  final repo = TaskRepository();
-  final service = TaskService(
+  final TaskService service = TaskService(
     taskRepository: TaskRepository()
   );
 
@@ -60,36 +59,11 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen>{
 
   Future<void> saveTask() async {
     final user = FirebaseAuth.instance.currentUser;
-
     if (user == null) return;
 
-    if (titleController.text.isEmpty || selectedDate == null){
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill all required fields")),
-      );
-      return;
-    }
-
-    if (courseError != null){
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(courseError)),
-      );
-      return;
-    }
-
-    if (isEditMode){
-      final updatedTask = widget.task!.copyWith(
-        title: titleController.text,
-        courseId: courseIDController.text,
-        description: descController.text,
-        deadline: selectedDate,
-        estimatedHours: double.tryParse(hoursController.text) ?? 0,
-        updatedAt: DateTime.now(),
-      );
-
-      await repo.updateTask(updatedTask);
-    } else {
-      final newTask = Task(
+    try {
+      final task = Task(
+        id: widget.task?.id,
         userId: user.uid,
         title: titleController.text,
         courseId: courseIDController.text,
@@ -98,10 +72,35 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen>{
         estimatedHours: double.tryParse(hoursController.text) ?? 0,
       );
 
-      await repo.addTask(newTask);
-    }
+      final result = isEditMode
+          ? await service.saveTaskChanges(task)
+          : await service.createTask(task);
 
-    if(mounted) Navigator.pop(context);
+      //FAILURE CASE
+      if (!result.success) {
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result.message)),
+        );
+        return;
+      }
+
+      //SUCCESS CASE
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.message)),
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    }
   }
 
   @override

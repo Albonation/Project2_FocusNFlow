@@ -122,6 +122,12 @@ class _CoursesTasksScreenState extends State<CoursesTasksScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           // open add task screen
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const AddEditTaskScreen(),
+            ),
+          );
         },
         child: const Icon(Icons.add),
       ),

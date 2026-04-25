@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:focus_n_flow/screens/sign_in_screen.dart';
-import 'package:focus_n_flow/services/registration_login_service.dart'; 'package:focus_n_flow/services/registration_login_service.dart';
+import 'package:focus_n_flow/screens/student_dashboard_screen.dart';
+import 'package:focus_n_flow/services/registration_login_service.dart';
 import '../widgets/login_signup_widgets/sign_up_widget.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -25,15 +25,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.dispose();
   }
 
-  void registerUser() {
+  void registerUser() async {
     final service = RegistrationLoginService();
 
-    final error = service.validateRegistration(
+    final error = await service.registerUser(
       fullname: nameController.text.trim(),
       email: emailController.text.trim(),
       password: passwordController.text.trim(),
       confirmPassword: confirmPassController.text.trim(),
     );
+
+    if (!mounted) return;
 
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -42,15 +44,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
       return;
     }
 
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Registration Successful")),
+    );
+
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => const SignInScreen(),
+        builder: (context) => const StudentDashboardScreen(),
       ),
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Registration Successful")),
     );
   }
 

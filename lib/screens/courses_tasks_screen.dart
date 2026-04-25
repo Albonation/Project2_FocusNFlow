@@ -33,17 +33,12 @@ class _CoursesTasksScreenState extends State<CoursesTasksScreen> {
       body: StreamBuilder<List<Task>>(
         stream: repo.getTasksForUser(user.uid),
         builder: (context, snapshot) {
+          //handles having no data
           if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: Text("No tasks yet"));
           }
 
           final tasks = snapshot.data!;
-
-          if (tasks.isEmpty) {
-            return const Center(
-              child: Text("No tasks yet"),
-            );
-          }
 
           return ListView.builder(
             itemCount: tasks.length,

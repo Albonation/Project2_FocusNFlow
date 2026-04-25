@@ -16,7 +16,7 @@ class ProgressSummary extends StatelessWidget {
 
     if (user == null) {
       return const Center(
-        child: Text("No user logged in"),
+        child: Text("No user logged in. Progress unavailable."),
       );
     }
 

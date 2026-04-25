@@ -76,6 +76,15 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen>{
       return;
     }
 
+    final courseError = validateCourseId(courseIDController.text.trim());
+
+    if (courseError != null){
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(courseError)),
+      );
+      return;
+    }
+
     if (isEditMode){
       final updatedTask = widget.task!.copyWith(
         title: titleController.text,
@@ -133,7 +142,7 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen>{
                 );
               },
               inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'A-Za-z0-9')),
+                FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
                 LengthLimitingTextInputFormatter(8),
               ],
               decoration: const InputDecoration(

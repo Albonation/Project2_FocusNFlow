@@ -35,4 +35,34 @@ class _AddEditTasksScreenState extends State<AddEditTaskScreen>{
       selectedDate = task.deadline;
     }
   }
+
+  Future<void> pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate ?? DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2100),
+    );
+
+    if (picked != null){
+      setState(() {
+        selectedDate = picked;
+      });
+    }
+  }
+
+  Future<void> saveTask() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) return;
+
+    if (titleController.text.isEmpty || selectedDate == null){
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill all required fields")),
+      );
+      return;
+    }
+
+    
+  }
 }

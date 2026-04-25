@@ -1,182 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/services.dart';
 import 'package:focus_n_flow/models/task_model.dart';
-import 'package:focus_n_flow/repositories/task_repository.dart';
-import 'package:focus_n_flow/services/task_service.dart';
+import 'package:focus_n_flow/widgets/task_add_edit_widgets/task_add_edit_widget.dart';
 
-class AddEditTaskScreen extends StatefulWidget{
+class AddEditTaskScreen extends StatelessWidget {
   final Task? task;
 
-  const AddEditTaskScreen({super.key, this.task});
+  const AddEditTaskScreen({
+    super.key,
+    this.task,
+  });
 
   @override
-  State<AddEditTaskScreen> createState() => _AddEditTaskScreenState();
-}
+  Widget build(BuildContext context) {
+    final isEditMode = task != null;
 
-class _AddEditTaskScreenState extends State<AddEditTaskScreen>{
-  final TaskService service = TaskService(
-    taskRepository: TaskRepository()
-  );
-
-  final titleController = TextEditingController();
-  final courseIDController = TextEditingController();
-  final descController = TextEditingController();
-  final hoursController = TextEditingController();
-
-  DateTime? selectedDate;
-
-  bool get isEditMode => widget.task != null;
-
-  @override
-  void initState(){
-    super.initState();
-
-    if (isEditMode){
-      final task = widget.task!;
-      titleController.text = task.title;
-      courseIDController.text = task.courseId;
-      descController.text = task.description;
-      hoursController.text = task.estimatedHours.toString();
-      selectedDate = task.deadline;
-    }
-  }
-
-  Future<void> pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDate ?? DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2100),
-    );
-
-    if (picked != null){
-      setState(() {
-        selectedDate = picked;
-      });
-    }
-  }
-
-  Future<void> saveTask() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    try {
-      final task = Task(
-        id: widget.task?.id,
-        userId: user.uid,
-        title: titleController.text,
-        courseId: courseIDController.text,
-        description: descController.text,
-        deadline: selectedDate!,
-        estimatedHours: double.tryParse(hoursController.text) ?? 0,
-      );
-
-      final result = isEditMode
-          ? await service.saveTaskChanges(task)
-          : await service.createTask(task);
-
-      //FAILURE CASE
-      if (!result.success) {
-        if (!mounted) return;
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result.message)),
-        );
-        return;
-      }
-
-      //SUCCESS CASE
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.message)),
-      );
-
-      Navigator.pop(context);
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context){
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEditMode ? "Edit Task" : "Add Task"),
+        title: Text(
+          isEditMode ? "Edit Task" : "Add Task",
+        ),
         centerTitle: true,
       ),
-      
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              controller: titleController,
-              decoration: const InputDecoration(labelText: "Title"),
-            ),
-
-            const SizedBox(height: 10),
-
-            TextField(
-              controller: courseIDController,
-              keyboardType: TextInputType.text,
-              textCapitalization: TextCapitalization.characters,
-              onChanged: (value){
-                courseIDController.value = TextEditingValue(
-                  text: value.toUpperCase(),
-                  selection: TextSelection.collapsed(offset: value.toUpperCase().length),
-                );
-              },
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
-                LengthLimitingTextInputFormatter(8),
-              ],
-              decoration: const InputDecoration(
-                labelText: "Course ID (e.g. ECON2002)",
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            TextField(
-              controller: descController,
-              decoration: const InputDecoration(labelText: "Description"),
-            ),
-
-            const SizedBox(height: 20),
-
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    selectedDate == null
-                      ? "No date selected"
-                      : "Deadline: ${selectedDate!.toLocal()}".split(' ')[0],
-                  ),
-                ),
-                TextButton(
-                  onPressed: pickDate,
-                  child: const Text("Pick Date"),
-                ),
-              ],
-            ),
-
-            const Spacer(),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: saveTask,
-                child: Text(isEditMode ? "Update Task" : "Add Task"),
-              ),
-            ),
-          ],
-        ),
+      body: AddEditTask(
+        task: task,
       ),
     );
   }

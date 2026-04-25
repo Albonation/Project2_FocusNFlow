@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
 import 'package:focus_n_flow/models/task_model.dart';
 import 'package:focus_n_flow/repositories/task_repository.dart';
 
@@ -38,7 +39,15 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen>{
     }
   }
 
-  
+  String? validateCourseId(String value){
+    final regex = RegExp(r'^[A-Z]{3,4}[0-9]{4}$');
+
+    if (!regex.hasMatch(value)){
+      return "Format must be like ECON1002 (3-4 letters + 4 numbers)";
+    }
+
+    return null;
+  }
 
   Future<void> pickDate() async {
     final picked = await showDatePicker(
@@ -112,6 +121,27 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen>{
             ),
 
             const SizedBox(height: 10),
+
+            TextField(
+              controller: courseIDController,
+              keyboardType: TextInputType.text,
+              textCapitalization: TextCapitalization.characters,
+              onChanged: (value){
+                courseIDController.value = TextEditingValue(
+                  text: value.toUpperCase(),
+                  selection: courseIDController.selection,
+                );
+              },
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'A-Za-z0-9')),
+                LengthLimitingTextInputFormatter(8),
+              ],
+              decoration: const InputDecoration(
+                labelText: "Course ID (e.g. ECON2002)",
+              ),
+            ),
+
+            const SizedBox(height: 20),
 
             TextField(
               controller: descController,

@@ -1,6 +1,8 @@
 //whether a task can be completed, completing a task, validating task data
 //essentially the rules and logic for the task system
 //importing necessarry packages
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../models/task_model.dart';
 import '../repositories/task_repository.dart';
 
@@ -27,35 +29,37 @@ class TaskService {
       return failureResult(task, error);
     }
 
-    final newTaskId = await taskRepository.addTask(task);
+    final now = DateTime.now(); //so they match
+    final taskToCreate = task.copyWith(createdAt: now, updatedAt: now);
 
-    final createdTask = task.copyWith(
-      id: newTaskId,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
+    final newTaskId = await taskRepository.addTask(taskToCreate);
+    final createdTask = taskToCreate.copyWith(id: newTaskId);
 
     return successResult(createdTask, "Task created successfully.");
   }
 
   //complete a task if it can be completed and passes validation
   Future<TaskActionResult> completeTask(Task task) async {
-    final taskIdError = validateTaskId(task.id);
-    if (taskIdError != null) {
-      return failureResult(task, taskIdError);
+    final error = runValidation([
+      () => validateTaskId(task.id),
+      () => validateUserId(task.userId),
+      () => canCompleteTask(task),
+    ]);
+
+    if (error != null) {
+      return failureResult(task, error);
     }
 
-    final canCompleteError = canCompleteTask(task);
-    if (canCompleteError != null) {
-      return failureResult(task, canCompleteError);
-    }
+    await taskRepository.markTaskCompleted(
+      userId: task.userId,
+      taskId: task.id!,
+    );
 
-    await taskRepository.markTaskCompleted(task.id!);
-
+    final now = DateTime.now(); //so they match
     final updatedTask = task.copyWith(
       status: TaskStatus.completed,
-      completedAt: DateTime.now(),
-      updatedAt: DateTime.now(),
+      completedAt: now,
+      updatedAt: now,
     );
 
     return successResult(updatedTask, 'Task marked as completed');
@@ -63,47 +67,39 @@ class TaskService {
 
   //update a task after passing validation checks
   Future<TaskActionResult> saveTaskChanges(Task task) async {
-    validateTaskId(task.id);
-    final errors = [
-      validateTitle(task.title),
-      validateCourseId(task.courseId),
-      validateDeadline(task.deadline),
-      validateEstimatedHours(task.estimatedHours),
-    ].whereType<String>().toList();
+    final error = runValidation([
+      () => validateTaskId(task.id),
+      () => validateUserId(task.userId),
+      () => validateCourseId(task.courseId),
+      () => validateTitle(task.title),
+      () => validateEstimatedHours(task.estimatedHours),
+      () => validateDeadline(task.deadline),
+    ]);
 
-    if (errors.isNotEmpty) {
-      return TaskActionResult(
-        success: false,
-        updatedTask: task,
-        message: errors.join("\n"),
-      );
+    if (error != null) {
+      return failureResult(task, error);
     }
 
-    final updatedTask = task.copyWith(
-      updatedAt: DateTime.now());
+    final updatedTask = task.copyWith(updatedAt: DateTime.now());
 
     await taskRepository.updateTask(updatedTask);
 
-    return TaskActionResult(
-      success: true,
-      updatedTask: updatedTask,
-      message: "Task saved successfully",
-    );
+    return successResult(updatedTask, 'Task changes saved successfully');
   }
 
   //reopen a task if it is allowed to be and passes validation
   Future<TaskActionResult> reopenTask(Task task) async {
-    final taskIdError = validateTaskId(task.id);
-    if (taskIdError != null) {
-      return failureResult(task, taskIdError);
+    final error = runValidation([
+      () => validateTaskId(task.id),
+      () => validateUserId(task.userId),
+      () => canReopenTask(task),
+    ]);
+
+    if (error != null) {
+      return failureResult(task, error);
     }
 
-    final canReopenError = canReopenTask(task);
-    if (canReopenError != null) {
-      return failureResult(task, canReopenError);
-    }
-
-    await taskRepository.reopenTask(task.id!);
+    await taskRepository.reopenTask(userId: task.userId, taskId: task.id!);
 
     final updatedTask = task.copyWith(
       status: TaskStatus.pending,
@@ -116,12 +112,16 @@ class TaskService {
 
   //delete a task if it exists
   Future<TaskActionResult> deleteTask(Task task) async {
-    final taskIdError = validateTaskId(task.id);
-    if (taskIdError != null) {
-      return failureResult(task, taskIdError);
+    final error = runValidation([
+      () => validateTaskId(task.id),
+      () => validateUserId(task.userId),
+    ]);
+
+    if (error != null) {
+      return failureResult(task, error);
     }
 
-    await taskRepository.deleteTask(task.id!);
+    await taskRepository.deleteTask(userId: task.userId, taskId: task.id!);
 
     return successResult(task, 'Task successfully deleted.');
   }
@@ -145,12 +145,6 @@ class TaskService {
     if (courseId == null || courseId.trim().isEmpty) {
       return 'Course ID is missing.';
     }
-    final regex = RegExp(r'^[A-Z]{3,4}[0-9]{4}$');
-
-    if (!regex.hasMatch(courseId)){
-      return "Format must be like ECON1002 (3-4 letters + 4 numbers)";
-    }
-
     return null;
   }
 
@@ -195,21 +189,27 @@ class TaskService {
     return null;
   }
 
-  //helper methods to create consistent action results for the UI
-  TaskActionResult failureResult(Task task, String message) {
-    return TaskActionResult(success: false, updatedTask: task, message: message);
-  }
-
-  TaskActionResult successResult(Task task, String message) {
-    return TaskActionResult(success: true, updatedTask: task, message: message);
-  }
-  //Validation helper for create function
+  //helper method to run validation checks in order and return first error message found
+  //or null if all pass
   String? runValidation(List<String? Function()> checks) {
     for (final check in checks) {
       final result = check();
       if (result != null) return result;
     }
     return null;
+  }
+
+  //helper methods to create consistent action results for the UI
+  TaskActionResult failureResult(Task task, String message) {
+    return TaskActionResult(
+      success: false,
+      updatedTask: task,
+      message: message,
+    );
+  }
+
+  TaskActionResult successResult(Task task, String message) {
+    return TaskActionResult(success: true, updatedTask: task, message: message);
   }
 } //end of TaskService class
 
@@ -225,3 +225,17 @@ class TaskActionResult {
     required this.message,
   });
 } //end of TaskActionResult class
+
+//this is being saved for later use in the course layers
+/*String? validateCourseId(String? courseId) {
+    if (courseId == null || courseId.trim().isEmpty) {
+      return 'Course ID is missing.';
+    }
+    final regex = RegExp(r'^[A-Z]{3,4}[0-9]{4}$');
+
+    if (!regex.hasMatch(courseId)){
+      return "Format must be like ECON1002 (3-4 letters + 4 numbers)";
+    }
+
+    return null;
+  }*/

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:focus_n_flow/repositories/task_repository.dart';
 import 'package:focus_n_flow/widgets/student_dashboard_widgets/progress_summary_widget.dart';
 import 'package:focus_n_flow/widgets/student_dashboard_widgets/upcoming_study_sessions_widget.dart';
 import 'package:focus_n_flow/widgets/student_dashboard_widgets/task_widget.dart';
@@ -14,12 +15,18 @@ class StudentDashboardScreen extends StatefulWidget {
 
 class _StudentDashboardState extends State<StudentDashboardScreen> {
   String fullName = "Student";
+late final Stream taskStream;
 
-  @override
-  void initState(){
-    super.initState();
-    getUserData();
+@override
+void initState() {
+  super.initState();
+  getUserData();
+
+  final user = FirebaseAuth.instance.currentUser;
+  if (user != null) {
+    taskStream = TaskRepository().getTasksForUser(user.uid);
   }
+}
 
   Future<void> getUserData() async {
     final user = FirebaseAuth.instance.currentUser;

@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:focus_n_flow/models/task_model.dart';
 import 'package:focus_n_flow/services/student_dashbord_services.dart';
-import 'package:focus_n_flow/repositories/task_repository.dart';
 
 class ProgressSummary extends StatelessWidget {
-  final service = StudentDashbordServices();
-  final repo = TaskRepository();
+  final Stream<List<Task>> stream;
+  final StudentDashbordServices service = StudentDashbordServices();
 
-  ProgressSummary({super.key});
+  ProgressSummary({super.key, required this.stream});
 
   @override
   Widget build(BuildContext context) {
@@ -21,15 +20,13 @@ class ProgressSummary extends StatelessWidget {
     }
 
     return StreamBuilder<List<Task>>(
-      stream: repo.getTasksForUser(user.uid),
+      stream: stream,
       builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(
-            child: Text("No progress yet"),
-          );
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
         }
 
-        final tasks = snapshot.data!;
+        final tasks = snapshot.data ?? [];
 
         final now = DateTime.now();
 
@@ -48,40 +45,43 @@ class ProgressSummary extends StatelessWidget {
             children: [
               const Text(
                 "Progress Summary",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
 
               const SizedBox(height: 12),
 
-              ...tasks.map((task) {
-                final progress =
-                    (service.getProgress(task) * 100).toInt();
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: tasks.length,
+                itemBuilder: (context, index) {
+                  final task = tasks[index];
+                  final progressValue = service.getProgress(task);
+                  final progressPercent = (progressValue * 100).toInt();
 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment:
-                          MainAxisAlignment.spaceBetween,
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(task.title),
-                        Text("$progress%"),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(task.title),
+                            Text("$progressPercent%"),
+                          ],
+                        ),
+
+                        const SizedBox(height: 6),
+
+                        LinearProgressIndicator(
+                          value: progressValue,
+                        ),
                       ],
                     ),
-
-                    const SizedBox(height: 6),
-
-                    LinearProgressIndicator(
-                      value: service.getProgress(task),
-                    ),
-
-                    const SizedBox(height: 12),
-                  ],
-                );
-              }),
+                  );
+                },
+              ),
 
               const SizedBox(height: 20),
 

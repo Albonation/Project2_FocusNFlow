@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:focus_n_flow/models/task_model.dart';
-import 'package:focus_n_flow/repositories/task_repository.dart';
 
 class Tasks extends StatelessWidget {
-  final repo = TaskRepository();
+  final Stream<List<Task>> stream;
 
-  Tasks({super.key});
+  const Tasks({super.key, required this.stream});
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +18,7 @@ class Tasks extends StatelessWidget {
     }
 
     return StreamBuilder<List<Task>>(
-      stream: repo.getTasksForUser(user.uid),
+      stream: stream,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(

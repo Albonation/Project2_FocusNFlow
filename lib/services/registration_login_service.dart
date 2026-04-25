@@ -1,31 +1,118 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RegistrationLoginService {
 
-  void loginUser({
+  // LOGIN
+  Future<void> loginUser({
     required String email,
     required String password,
-  }) {
-    debugPrint("Username: $email");
-    debugPrint("Password: $password");
+  }) async {
+    try {
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email.trim(),
+        password: password.trim(),
+      );
+
+      debugPrint("Login successful: ${userCredential.user?.uid}");
+
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') {
+        debugPrint("No user found for that email");
+      } else if (e.code == 'wrong-password') {
+        debugPrint("Wrong password provided");
+      } else if (e.code == 'invalid-email') {
+        debugPrint("Invalid email format");
+      } else {
+        debugPrint("Login failed: ${e.message}");
+      }
+
+    } catch (e) {
+      debugPrint("Unexpected error: $e");
+    }
   }
 
+
+  // REGISTER
+  Future<String?> registerUser({
+    required String fullname,
+    required String email,
+    required String password,
+    required String confirmPassword,
+  }) async {
+
+    final validationError = validateRegistration(
+      fullname: fullname,
+      email: email,
+      password: password,
+      confirmPassword: confirmPassword,
+    );
+
+    if (validationError != null) {
+      return validationError;
+    }
+
+    try {
+      UserCredential userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email.trim(),
+        password: password.trim(),
+      );
+
+      final user = userCredential.user;
+
+      if (user == null) {
+        return "Failed to create user";
+      }
+
+      await FirebaseFirestore.instance
+          .collection("users")
+          .doc(user.uid)
+          .set({
+        "fullName": fullname.trim(),
+        "email": email.trim(),
+        "createdAt": Timestamp.now(),
+      });
+
+      debugPrint("User registered successfully");
+
+      return null;
+
+    } on FirebaseAuthException catch (e) {
+      if (e.code == "email-already-in-use") {
+        return "This email is already registered";
+      }
+
+      if (e.code == "weak-password") {
+        return "Password is too weak";
+      }
+
+      return e.message ?? "Registration failed";
+
+    } catch (e) {
+      return "Something went wrong: $e";
+    }
+  }
+
+
+  // VALIDATION
   String? validateRegistration({
     required String fullname,
     required String email,
     required String password,
     required String confirmPassword,
-  }) { 
-    //Check for correct field entries
-    if (fullname.isEmpty){
+  }) {
+    if (fullname.isEmpty) {
       return "Please enter your full name";
     }
 
-    if (email.isEmpty){
+    if (email.isEmpty) {
       return "Please enter your email";
     }
 
-    if (!email.trim().toLowerCase().endsWith("@student.gsu.edu")){
+    if (!email.trim().toLowerCase().endsWith("@student.gsu.edu")) {
       return "Please use your GSU student email";
     }
 
@@ -37,11 +124,6 @@ class RegistrationLoginService {
       return "Passwords do not match";
     }
 
-    debugPrint("Full Name: $fullname");
-    debugPrint("Username: $email");
-    debugPrint("Password: $password");
-    debugPrint("Confirm Password: $confirmPassword");
-
-  return null;
+    return null;
   }
 }

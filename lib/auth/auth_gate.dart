@@ -1,8 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:focus_n_flow/screens/app_shell.dart';
 import 'package:focus_n_flow/screens/sign_in_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:focus_n_flow/screens/student_dashboard_screen.dart';
-
 
 class AuthGate extends StatelessWidget{
   const AuthGate({super.key});
@@ -23,7 +22,7 @@ class AuthGate extends StatelessWidget{
 
         //User is logged in
         if (snapshot.hasData) {
-          return const StudentDashboardScreen();
+          return const AppShell();
         }
 
         //User is not logged in

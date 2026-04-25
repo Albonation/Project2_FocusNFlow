@@ -76,8 +76,6 @@ class RegistrationLoginService {
         "createdAt": Timestamp.now(),
       });
 
-      debugPrint("User registered successfully");
-
       return null;
 
     } on FirebaseAuthException catch (e) {

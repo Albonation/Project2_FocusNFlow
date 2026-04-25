@@ -130,20 +130,41 @@ class _AddEditTaskFormState extends State<AddEditTask> {
 
           const SizedBox(height: 20),
 
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  selectedDate == null
-                    ? "No date selected"
-                    : "Deadline: ${selectedDate!.toLocal()}".split(' ')[0],
+          const SizedBox(height: 20),
+
+          TextField(
+            controller: hoursController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              labelText: "Estimated Hours",
+              hintText: "Enter number of hours",
+            ),
+          ),
+
+          GestureDetector(
+            onTap: pickDate,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                selectedDate == null
+                    ? "Select Deadline"
+                    : "${selectedDate!.month}/${selectedDate!.day}/${selectedDate!.year}",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: selectedDate == null
+                      ? Colors.grey
+                      : Colors.black,
                 ),
               ),
-              TextButton(
-                onPressed: pickDate,
-                child: const Text("Pick Date"),
-              ),
-            ],
+            ),
           ),
 
           const Spacer(),

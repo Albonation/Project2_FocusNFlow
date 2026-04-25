@@ -21,13 +21,26 @@ class Tasks extends StatelessWidget {
     return StreamBuilder<List<Task>>(
       stream: repo.getTasksForUser(user.uid),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
-            child: Text("No tasks yet"),
+            child: CircularProgressIndicator(),
           );
         }
 
-        final tasks = snapshot.data!;
+        if (snapshot.hasError) {
+          return const Center(
+            child: Text("Something went wrong loading tasks"),
+          );
+        }
+
+        final tasks = snapshot.data ?? [];
+
+        if (tasks.isEmpty) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            child: const Text("No tasks yet"),
+          );
+        }
 
         return Container(
           width: double.infinity,
@@ -50,8 +63,13 @@ class Tasks extends StatelessWidget {
 
               const SizedBox(height: 12),
 
-              Column(
-                children: tasks.map((task) {
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: tasks.length,
+                itemBuilder: (context, index) {
+                  final task = tasks[index];
+
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: Container(
@@ -73,9 +91,7 @@ class Tasks extends StatelessWidget {
                           Expanded(
                             child: Text(
                               task.title,
-                              style: const TextStyle(
-                                fontSize: 16,
-                              ),
+                              style: const TextStyle(fontSize: 16),
                             ),
                           ),
 
@@ -90,16 +106,14 @@ class Tasks extends StatelessWidget {
                             ),
                             child: Text(
                               task.manualImportance.label,
-                              style: const TextStyle(
-                                fontSize: 12,
-                              ),
+                              style: const TextStyle(fontSize: 12),
                             ),
                           ),
                         ],
                       ),
                     ),
                   );
-                }).toList(),
+                },
               ),
             ],
           ),

@@ -11,3 +11,11 @@ class AddEditTaskScreen extends StatefulWidget{
   @override
   State<AddEditTaskScreen> createState() => _AddEditTaskScreenState();
 }
+
+class _AddEditTasksScreenState extends State<AddEditTaskScreen>{
+  final repo = TaskRepository();
+
+  final titleController = TextEditingController();
+  final descController = TextEditingController();
+  final hoursController = TextEditingController();
+}

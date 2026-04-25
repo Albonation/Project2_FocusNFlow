@@ -10,7 +10,7 @@ class TaskRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   CollectionReference<Map<String, dynamic>> _tasksCollection(String userId) =>
-      _firestore.collection('users').doc('userId').collection('tasks');
+      _firestore.collection('users').doc(userId).collection('tasks');
 
 
   //add task nested in the users collection and return the generated document ID

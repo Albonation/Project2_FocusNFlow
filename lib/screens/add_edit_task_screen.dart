@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:focus_n_flow/models/task_model.dart';
 import 'package:focus_n_flow/repositories/task_repository.dart';
+import 'package:focus_n_flow/services/task_service.dart';
 
 class AddEditTaskScreen extends StatefulWidget{
   final Task? task;
@@ -15,6 +16,9 @@ class AddEditTaskScreen extends StatefulWidget{
 
 class _AddEditTaskScreenState extends State<AddEditTaskScreen>{
   final repo = TaskRepository();
+  final service = TaskService(
+    taskRepository: TaskRepository()
+  );
 
   final titleController = TextEditingController();
   final courseIDController = TextEditingController();
@@ -37,16 +41,6 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen>{
       hoursController.text = task.estimatedHours.toString();
       selectedDate = task.deadline;
     }
-  }
-
-  String? validateCourseId(String value){
-    final regex = RegExp(r'^[A-Z]{3,4}[0-9]{4}$');
-
-    if (!regex.hasMatch(value)){
-      return "Format must be like ECON1002 (3-4 letters + 4 numbers)";
-    }
-
-    return null;
   }
 
   Future<void> pickDate() async {
@@ -75,8 +69,6 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen>{
       );
       return;
     }
-
-    final courseError = validateCourseId(courseIDController.text.trim());
 
     if (courseError != null){
       ScaffoldMessenger.of(context).showSnackBar(
@@ -138,7 +130,7 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen>{
               onChanged: (value){
                 courseIDController.value = TextEditingValue(
                   text: value.toUpperCase(),
-                  selection: courseIDController.selection,
+                  selection: TextSelection.collapsed(offset: value.toUpperCase().length),
                 );
               },
               inputFormatters: [

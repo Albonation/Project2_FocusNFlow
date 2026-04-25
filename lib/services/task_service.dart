@@ -11,29 +11,20 @@ class TaskService {
 
   //create a new task after validating all the necessary fields
   Future<TaskActionResult> createTask(Task task) async {
-    final userIdError = validateUserId(task.userId);
-    if (userIdError != null) {
-      return failureResult(task, userIdError);
+    if (task.id != null) {
+      return failureResult(task, "New task should not already have an ID.");
     }
 
-    final courseIdError = validateCourseId(task.courseId);
-    if (courseIdError != null) {
-      return failureResult(task, courseIdError);
-    }
+    final error = runValidation([
+      () => validateUserId(task.userId),
+      () => validateCourseId(task.courseId),
+      () => validateTitle(task.title),
+      () => validateEstimatedHours(task.estimatedHours),
+      () => validateDeadline(task.deadline),
+    ]);
 
-    final titleError = validateTitle(task.title);
-    if (titleError != null) {
-      return failureResult(task, titleError);
-    }
-
-    final estimatedHoursError = validateEstimatedHours(task.estimatedHours);
-    if (estimatedHoursError != null) {
-      return failureResult(task, estimatedHoursError);
-    }
-
-    final deadlineError = validateDeadline(task.deadline);
-    if (deadlineError != null) {
-      return failureResult(task, deadlineError);
+    if (error != null) {
+      return failureResult(task, error);
     }
 
     final newTaskId = await taskRepository.addTask(task);
@@ -44,7 +35,7 @@ class TaskService {
       updatedAt: DateTime.now(),
     );
 
-    return successResult(createdTask, 'Task created successfully.');
+    return successResult(createdTask, "Task created successfully.");
   }
 
   //complete a task if it can be completed and passes validation
@@ -72,35 +63,30 @@ class TaskService {
 
   //update a task after passing validation checks
   Future<TaskActionResult> saveTaskChanges(Task task) async {
-    final userIdError = validateUserId(task.userId);
-    if (userIdError != null) {
-      return failureResult(task, userIdError);
-    }
+    final errors = [
+      validateTitle(task.title),
+      validateCourseId(task.courseId),
+      validateDeadline(task.deadline),
+      validateEstimatedHours(task.estimatedHours),
+    ].where((e) => e != null);
 
-    final courseIdError = validateCourseId(task.courseId);
-    if (courseIdError != null) {
-      return failureResult(task, courseIdError);
-    }
-
-    final titleError = validateTitle(task.title);
-    if (titleError != null) {
-      return failureResult(task, titleError);
-    }
-
-    final estimatedHoursError = validateEstimatedHours(task.estimatedHours);
-    if (estimatedHoursError != null) {
-      return failureResult(task, estimatedHoursError);
-    }
-
-    final deadlineError = validateDeadline(task.deadline);
-    if (deadlineError != null) {
-      return failureResult(task, deadlineError);
+    if (errors.isNotEmpty) {
+      return TaskActionResult(
+        success: false,
+        updatedTask: task,
+        message: errors.first!,
+      );
     }
 
     final updatedTask = task.copyWith(updatedAt: DateTime.now());
+
     await taskRepository.updateTask(updatedTask);
 
-    return successResult(updatedTask, 'Task changes successfully saved.');
+    return TaskActionResult(
+      success: true,
+      updatedTask: updatedTask,
+      message: "Task saved successfully",
+    );
   }
 
   //reopen a task if it is allowed to be and passes validation
@@ -157,6 +143,12 @@ class TaskService {
     if (courseId == null || courseId.trim().isEmpty) {
       return 'Course ID is missing.';
     }
+    final regex = RegExp(r'^[A-Z]{3,4}[0-9]{4}$');
+
+    if (!regex.hasMatch(courseId)){
+      return "Format must be like ECON1002 (3-4 letters + 4 numbers)";
+    }
+
     return null;
   }
 
@@ -208,6 +200,14 @@ class TaskService {
 
   TaskActionResult successResult(Task task, String message) {
     return TaskActionResult(success: true, updatedTask: task, message: message);
+  }
+  //Validation helper for create function
+  String? runValidation(List<String? Function()> checks) {
+    for (final check in checks) {
+      final result = check();
+      if (result != null) return result;
+    }
+    return null;
   }
 } //end of TaskService class
 

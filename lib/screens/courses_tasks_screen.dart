@@ -68,12 +68,32 @@ class _CoursesTasksScreenState extends State<CoursesTasksScreen> {
                   trailing: PopupMenuButton(
                     onSelected: (value) {
                       if (value == "delete") {
-                        repo.deleteTask(task.id!);
+                        showDialog(
+                          context: context,
+                          builder: (_) => AlertDialog(
+                            title: const Text("Delete Task?"),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                                child: const Text("Cancel"),
+                              ),
+
+                              TextButton(
+                                onPressed: () {
+                                  repo.deleteTask(task.id!);
+                                  Navigator.pop(context);
+                                },
+                                child: const Text("Delete"),
+                              ),
+                            ],
+                          ),
+                        );
                       }
 
                       if (value == "edit") {
-                        // open edit screen 
-                        Navigator.pushReplacement(
+                        Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (_) => AddEditTaskScreen(task: task),

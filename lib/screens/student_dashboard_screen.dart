@@ -17,10 +17,41 @@ class _StudentDashboardState extends State<StudentDashboardScreen> {
   String fullName = "Student";
 
   List<Task> tasks = [
-    Task(title: "Finish Flutter Assignment", deadline: DateTime.now(), effort: 5, courseWeight: 10),
-    Task(title: "Review CyberSecurity Notes", deadline: DateTime(2026, 05, 23, 14, 50), effort: 3, courseWeight: 4),
-    Task(title: "Attend Group Study Session", deadline: DateTime(2026, 04, 25, 4, 30), effort: 4, courseWeight: 15),
-    Task(title: "Submit Weekly Planner", deadline: DateTime(2026, 04, 28, 16, 40), effort: 1, courseWeight: 1),
+    Task(
+      userId: "demoUser",
+      courseId: "course1",
+      title: "Finish Flutter Assignment",
+      description: "Complete dashboard UI",
+      deadline: DateTime.now(),
+      estimatedHours: 5,
+    ),
+
+    Task(
+      userId: "demoUser",
+      courseId: "course2",
+      title: "Review CyberSecurity Notes",
+      description: "Study firewall concepts",
+      deadline: DateTime(2026, 5, 23, 14, 50),
+      estimatedHours: 3,
+    ),
+
+    Task(
+      userId: "demoUser",
+      courseId: "course3",
+      title: "Attend Group Study Session",
+      description: "Meet with study group",
+      deadline: DateTime(2026, 4, 25, 4, 30),
+      estimatedHours: 4,
+    ),
+
+    Task(
+      userId: "demoUser",
+      courseId: "course4",
+      title: "Submit Weekly Planner",
+      description: "Upload planner to app",
+      deadline: DateTime(2026, 4, 28, 16, 40),
+      estimatedHours: 1,
+    ),
   ];
 
   @override

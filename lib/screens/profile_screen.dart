@@ -127,9 +127,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     try {
                       final result = await _courseService.createCourse(course);
 
-                      if (!mounted) return;
+                      if (!dialogContext.mounted) return;
 
                       Navigator.pop(dialogContext);
+
                       _showMessage(result.message);
                     } catch (e) {
                       if (!mounted) return;

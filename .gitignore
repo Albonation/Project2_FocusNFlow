@@ -50,3 +50,6 @@ app.*.map.json
 /android/app/release
 
 .fake
+
+# local testing and scratch files
+/mytesting/

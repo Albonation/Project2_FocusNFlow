@@ -5,17 +5,21 @@ import 'package:focus_n_flow/theme/app_corners.dart';
 import 'package:focus_n_flow/theme/app_spacing.dart';
 import 'package:focus_n_flow/theme/app_theme_extensions.dart';
 
-//stateful widget to account for the async membership check and button state management
+//stateful widget to account for button state management
 class StudyRoomCard extends StatefulWidget {
   final StudyRoom room;
   final String userId;
   final StudyRoomService service;
+  final bool isUserInRoom;
+  final bool isUserInAnotherRoom;
 
   const StudyRoomCard({
     super.key,
     required this.room,
     required this.userId,
     required this.service,
+    required this.isUserInRoom,
+    required this.isUserInAnotherRoom,
   });
 
   @override
@@ -23,35 +27,7 @@ class StudyRoomCard extends StatefulWidget {
 }
 
 class _StudyRoomCardState extends State<StudyRoomCard> {
-  late Future<bool> _membershipFuture;
   bool _isSubmitting = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _membershipFuture = _loadMembership();
-  }
-
-  //this method will check if the user is in the room and update the membership future
-  //if the room changes or occupancy changes
-  //flutter calls this for us when the widget is rebuilt with new data
-  @override
-  void didUpdateWidget(covariant StudyRoomCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    if (oldWidget.room.id != widget.room.id ||
-        oldWidget.room.currentOccupancy != widget.room.currentOccupancy) {
-      _membershipFuture = _loadMembership();
-    }
-  }
-
-  //helper method to check if the user is in the room
-  Future<bool> _loadMembership() {
-    return widget.service.isUserInRoom(
-      roomId: widget.room.id,
-      userId: widget.userId,
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,20 +43,14 @@ class _StudyRoomCardState extends State<StudyRoomCard> {
             _OccupancyBadge(room: widget.room),
             _StudyRoomDetails(room: widget.room),
             AppSpacing.gapMd,
-            FutureBuilder<bool>(
-              future: _membershipFuture,
-              builder: (context, snapshot) {
-                final isUserInRoom = snapshot.data ?? false;
-
-                return _StudyRoomActions(
-                  isUserInRoom: isUserInRoom,
-                  isRoomFull: widget.room.isFull,
-                  isSubmitting: _isSubmitting,
-                  onJoinSolo: _joinSolo,
-                  onLeaveRoom: _leaveRoom,
-                  onJoinGroup: _showGroupMessage,
-                );
-              },
+            _StudyRoomActions(
+              isUserInRoom: widget.isUserInRoom,
+              isUserInAnotherRoom: widget.isUserInAnotherRoom,
+              isRoomFull: widget.room.isFull,
+              isSubmitting: _isSubmitting,
+              onJoinSolo: _joinSolo,
+              onLeaveRoom: _leaveRoom,
+              onJoinGroup: _showGroupMessage,
             ),
           ],
         ),
@@ -105,7 +75,6 @@ class _StudyRoomCardState extends State<StudyRoomCard> {
 
     setState(() {
       _isSubmitting = false;
-      _membershipFuture = _loadMembership();
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -136,7 +105,6 @@ class _StudyRoomCardState extends State<StudyRoomCard> {
 
     setState(() {
       _isSubmitting = false;
-      _membershipFuture = _loadMembership();
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -252,6 +220,7 @@ class _StudyRoomDetails extends StatelessWidget {
 
 class _StudyRoomActions extends StatelessWidget {
   final bool isUserInRoom;
+  final bool isUserInAnotherRoom;
   final bool isRoomFull;
   final bool isSubmitting;
   final VoidCallback onJoinSolo;
@@ -260,6 +229,7 @@ class _StudyRoomActions extends StatelessWidget {
 
   const _StudyRoomActions({
     required this.isUserInRoom,
+    required this.isUserInAnotherRoom,
     required this.isRoomFull,
     required this.isSubmitting,
     required this.onJoinSolo,
@@ -280,7 +250,9 @@ class _StudyRoomActions extends StatelessWidget {
           )
         else
           FilledButton(
-            onPressed: isRoomFull || isSubmitting ? null : onJoinSolo,
+            onPressed: isRoomFull || isSubmitting || isUserInAnotherRoom
+                ? null
+                : onJoinSolo,
             child: const Text('Join Solo'),
           ),
         OutlinedButton(

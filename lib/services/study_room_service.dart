@@ -24,6 +24,14 @@ class StudyRoomService {
     return _repository.watchRoomsByBuilding(building);
   }
 
+  //streams the user's global study room membership document
+  Stream<String?> watchCurrentJoinedRoomId(String userId) {
+    if (userId.trim().isEmpty) {
+      throw ArgumentError('User ID cannot be empty.');
+    }
+    return _repository.watchCurrentJoinedRoomId(userId);
+  }
+
   //fetches a single study room by ID
   Future<StudyRoom?> getStudyRoomById(String roomId) {
     return _repository.getStudyRoomById(roomId);

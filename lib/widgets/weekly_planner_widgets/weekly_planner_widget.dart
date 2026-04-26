@@ -62,8 +62,18 @@ class WeeklyPlannerWidget extends StatelessWidget {
                         subtitle: Text(
                           "Due: ${task.deadline.toLocal()}",
                         ),
-                        trailing: Text(
-                          task.priorityScore.toStringAsFixed(1),
+                        trailing: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              task.priorityScore.toStringAsFixed(1),
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            const Text(
+                              "Priority",
+                              style: TextStyle(fontSize: 10),
+                            ),
+                          ],
                         ),
                       );
                     }),

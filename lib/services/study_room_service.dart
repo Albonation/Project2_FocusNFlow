@@ -37,14 +37,6 @@ class StudyRoomService {
   }) async {
     _validateIds(roomId: roomId, userId: userId);
 
-    final alreadyJoined = await _repository.isUserInRoom(
-      roomId: roomId,
-      userId: userId,
-    );
-    if (alreadyJoined) {
-      return false;
-    }
-
     return _repository.joinRoom(roomId: roomId, userId: userId);
   }
 
@@ -54,15 +46,16 @@ class StudyRoomService {
   }) async {
     _validateIds(roomId: roomId, userId: userId);
 
-    final isMember = await _repository.isUserInRoom(
-      roomId: roomId,
-      userId: userId,
-    );
-    if (!isMember) {
-      return false;
-    }
-
     return _repository.leaveRoom(roomId: roomId, userId: userId);
+  }
+
+  Future<bool> isUserInRoom({
+    required String roomId,
+    required String userId,
+  }) async {
+    _validateIds(roomId: roomId, userId: userId);
+
+    return _repository.isUserInRoom(roomId: roomId, userId: userId);
   }
 
   Future<void> addStudyRoom(StudyRoom room) {

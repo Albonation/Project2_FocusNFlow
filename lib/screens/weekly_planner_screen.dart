@@ -27,7 +27,7 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Weekly Study Plan"),
+        title: const Text("Weekly Study Planner"),
       ),
       body: WeeklyPlannerWidget(
         userId: user.uid,

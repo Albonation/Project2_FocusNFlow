@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:focus_n_flow/models/task_model.dart';
 import 'package:focus_n_flow/repositories/task_repository.dart';
 import 'package:focus_n_flow/services/weekly_planner_service.dart';
-import 'package:focus_n_flow/theme/app_spacing.dart';
-import 'package:focus_n_flow/theme/app_theme_extensions.dart';
 
-class WeeklyPlannerWidget extends StatelessWidget {
+class WeeklyPlannerWidget extends StatefulWidget {
   final String userId;
   final TaskRepository repository;
   final WeeklyPlannerService service;
@@ -18,72 +15,58 @@ class WeeklyPlannerWidget extends StatelessWidget {
   });
 
   @override
+  State<WeeklyPlannerWidget> createState() => _WeeklyPlannerSectionState();
+}
+
+class _WeeklyPlannerSectionState extends State<WeeklyPlannerWidget> {
+  bool showCalendar = false;
+
+  @override
   Widget build(BuildContext context) {
-    return StreamBuilder<List<Task>>(
-      stream: repository.getTasksForUser(userId),
-      builder: (context, snapshot) {
+    return Column(
+      children: [
+        // Toggle
+        Padding(
+          padding: const EdgeInsets.all(12),
+          child: SegmentedButton<bool>(
+            segments: const [
+              ButtonSegment(value: false, label: Text("Weekly")),
+              ButtonSegment(value: true, label: Text("Calendar")),
+            ],
+            selected: {showCalendar},
+            onSelectionChanged: (value) {
+              setState(() {
+                showCalendar = value.first;
+              });
+            },
+          ),
+        ),
 
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
+        Expanded(
+          child: StreamBuilder(
+            stream: widget.repository.getTasksForUser(widget.userId),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(
-            child: Text("Add tasks to generate Weekly Plan"),
-          );
-        }
+              final tasks = snapshot.data!;
 
-        final tasks = snapshot.data!;
-        final plan = service.generateWeeklyPlan(tasks);
+              if (showCalendar) {
+                return CalendarPlannerView(
+                  tasks: tasks,
+                  service: widget.service,
+                );
+              }
 
-        return ListView(
-          padding: AppSpacing.screen,
-          children: plan.entries.map((entry) {
-            return Card(
-              margin: const EdgeInsets.only(bottom: 16),
-              child: Padding(
-                padding: AppSpacing.card,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      entry.key,
-                      style: context.text.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-
-                    AppSpacing.gapMd,
-
-                    ...entry.value.map((task) {
-                      return ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(task.title),
-                        subtitle: Text(
-                          "Due: ${task.deadline.toLocal()}",
-                        ),
-                        trailing: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              task.priorityScore.toStringAsFixed(1),
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            const Text(
-                              "Priority",
-                              style: TextStyle(fontSize: 10),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
-        );
-      },
+              return WeeklyPlannerView(
+                tasks: tasks,
+                service: widget.service,
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

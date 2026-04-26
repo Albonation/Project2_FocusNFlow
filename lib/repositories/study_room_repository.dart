@@ -7,7 +7,7 @@ class StudyRoomRepository {
   final FirebaseFirestore _firestore;
 
   StudyRoomRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   CollectionReference<Map<String, dynamic>> get _roomsCollection {
     return _firestore.collection('studyRooms');
@@ -24,8 +24,8 @@ class StudyRoomRepository {
         .orderBy('name')
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map(StudyRoom.fromFirestore).toList();
-    });
+          return snapshot.docs.map(StudyRoom.fromFirestore).toList();
+        });
   }
 
   Future<List<StudyRoom>> getStudyRooms() async {
@@ -46,8 +46,8 @@ class StudyRoomRepository {
         .orderBy('name')
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map(StudyRoom.fromFirestore).toList();
-    });
+          return snapshot.docs.map(StudyRoom.fromFirestore).toList();
+        });
   }
 
   Future<List<StudyRoom>> getAvailableStudyRooms() async {
@@ -68,7 +68,22 @@ class StudyRoomRepository {
         .orderBy('name')
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map(StudyRoom.fromFirestore).toList();
+          return snapshot.docs.map(StudyRoom.fromFirestore).toList();
+        });
+  }
+
+  Stream<String?> watchCurrentJoinedRoomId(String userId) {
+    return _userMembershipCollection.doc(userId).snapshots().map((snapshot) {
+      if (!snapshot.exists) {
+        return null;
+      }
+
+      final roomId = snapshot.data()?['roomId'];
+      if (roomId is String) {
+        return roomId;
+      }
+
+      return null;
     });
   }
 
@@ -169,7 +184,8 @@ class StudyRoomRepository {
       //add user to this room's members collection
       transaction.set(memberRef, {
         'userId': userId,
-        'joinedAt': FieldValue.serverTimestamp()});
+        'joinedAt': FieldValue.serverTimestamp(),
+      });
       //add user to this room in the global room membership collection
       transaction.set(userMembershipRef, {
         'roomId': roomId,

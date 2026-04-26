@@ -67,64 +67,74 @@ class _StudyRoomsScreenState extends State<StudyRoomsScreen> {
           ),
         ],
       ),
-      body: StreamBuilder<List<StudyRoom>>(
-        stream: stream,
-        builder: (context, snapshot) {
-          //handle loading state
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: StreamBuilder(
+        stream: _service.watchCurrentJoinedRoomId(userId),
+        builder: (context, membershipSnapshots) {
+          final currentRoomId = membershipSnapshots.data;
 
-          //handle error state
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: AppSpacing.screen,
-                child: Text(
-                  'Something went wrong loading study rooms.',
-                  textAlign: TextAlign.center,
-                  style: context.text.bodyMedium?.copyWith(
-                    color: context.colors.error,
+          return StreamBuilder<List<StudyRoom>>(
+            stream: stream,
+            builder: (context, snapshot) {
+              //handle loading state
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              //handle error state
+              if (snapshot.hasError) {
+                return Center(
+                  child: Padding(
+                    padding: AppSpacing.screen,
+                    child: Text(
+                      'Something went wrong loading study rooms.',
+                      textAlign: TextAlign.center,
+                      style: context.text.bodyMedium?.copyWith(
+                        color: context.colors.error,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            );
-          }
+                );
+              }
 
-          //apply local filters
-          final rooms = snapshot.data ?? [];
-          final filteredRooms = rooms.where(_filters.matches).toList();
+              //apply local filters
+              final rooms = snapshot.data ?? [];
+              final filteredRooms = rooms.where(_filters.matches).toList();
 
-          //handle empty state
-          if (filteredRooms.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: AppSpacing.screen,
-                child: Text(
-                  'No rooms match the selected filters.',
-                  textAlign: TextAlign.center,
-                  style: context.text.bodyLarge?.copyWith(
-                    color: context.colors.onSurfaceVariant,
+              //handle empty state
+              if (filteredRooms.isEmpty) {
+                return Center(
+                  child: Padding(
+                    padding: AppSpacing.screen,
+                    child: Text(
+                      'No rooms match the selected filters.',
+                      textAlign: TextAlign.center,
+                      style: context.text.bodyLarge?.copyWith(
+                        color: context.colors.onSurfaceVariant,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            );
-          }
+                );
+              }
 
-          //display list of rooms
-          return ListView.builder(
-            padding: AppSpacing.screen,
-            itemCount: filteredRooms.length,
-            itemBuilder: (context, index) {
-              final room = filteredRooms[index];
+              //display list of rooms
+              return ListView.builder(
+                padding: AppSpacing.screen,
+                itemCount: filteredRooms.length,
+                itemBuilder: (context, index) {
+                  final room = filteredRooms[index];
 
-              return Padding(
-                padding: AppSpacing.rowPadding,
-                child: StudyRoomCard(
-                  room: room,
-                  userId: userId,
-                  service: _service,
-                ),
+                  return Padding(
+                    padding: AppSpacing.rowPadding,
+                    child: StudyRoomCard(
+                      room: room,
+                      userId: userId,
+                      service: _service,
+                      isUserInRoom: currentRoomId == room.id,
+                      isUserInAnotherRoom:
+                          currentRoomId != null && currentRoomId != room.id,
+                    ),
+                  );
+                },
               );
             },
           );

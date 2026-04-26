@@ -1,33 +1,36 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:focus_n_flow/models/course_model.dart';
 import 'package:focus_n_flow/models/task_model.dart';
-import 'package:focus_n_flow/services/task_service.dart';
+import 'package:focus_n_flow/repositories/course_repository.dart';
 import 'package:focus_n_flow/repositories/task_repository.dart';
+import 'package:focus_n_flow/services/task_service.dart';
+import 'package:focus_n_flow/theme/app_spacing.dart';
+import 'package:focus_n_flow/theme/app_theme_extensions.dart';
 
 class AddEditTask extends StatefulWidget {
   final Task? task;
 
-  const AddEditTask({
-    super.key,
-    this.task,
-  });
+  const AddEditTask({super.key, this.task});
 
   @override
   State<AddEditTask> createState() => _AddEditTaskFormState();
 }
 
 class _AddEditTaskFormState extends State<AddEditTask> {
-  final service = TaskService(
+  final TaskService _taskService = TaskService(
     taskRepository: TaskRepository(),
   );
 
+  final CourseRepository _courseRepository = CourseRepository();
+
   final titleController = TextEditingController();
-  final courseIDController = TextEditingController();
   final descController = TextEditingController();
   final hoursController = TextEditingController();
+  final deadlineController = TextEditingController();
 
   DateTime? selectedDate;
+  String? selectedCourseId;
 
   bool get isEditMode => widget.task != null;
 
@@ -37,12 +40,27 @@ class _AddEditTaskFormState extends State<AddEditTask> {
 
     if (isEditMode) {
       final task = widget.task!;
+
       titleController.text = task.title;
-      courseIDController.text = task.courseId;
       descController.text = task.description;
       hoursController.text = task.estimatedHours.toString();
       selectedDate = task.deadline;
+      selectedCourseId = task.courseId;
+      deadlineController.text = _formatDate(task.deadline);
     }
+  }
+
+  @override
+  void dispose() {
+    titleController.dispose();
+    descController.dispose();
+    hoursController.dispose();
+    deadlineController.dispose();
+    super.dispose();
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.month}/${date.day}/${date.year}';
   }
 
   Future<void> pickDate() async {
@@ -53,117 +71,184 @@ class _AddEditTaskFormState extends State<AddEditTask> {
       lastDate: DateTime(2100),
     );
 
-    if (picked != null){
+    if (picked != null) {
       setState(() {
         selectedDate = picked;
+        deadlineController.text = _formatDate(picked);
       });
     }
   }
 
   Future<void> saveTask() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null || selectedDate == null) return;
+
+    if (user == null) {
+      _showMessage('No user logged in.');
+      return;
+    }
+
+    if (selectedCourseId == null || selectedCourseId!.trim().isEmpty) {
+      _showMessage('Please select a course.');
+      return;
+    }
+
+    if (selectedDate == null) {
+      _showMessage('Please select a deadline.');
+      return;
+    }
 
     final task = Task(
       id: widget.task?.id,
       userId: user.uid,
-      title: titleController.text,
-      courseId: courseIDController.text,
-      description: descController.text,
+      courseId: selectedCourseId!,
+      title: titleController.text.trim(),
+      description: descController.text.trim(),
       deadline: selectedDate!,
-      estimatedHours: double.tryParse(hoursController.text) ?? 0,
+      estimatedHours: double.tryParse(hoursController.text.trim()) ?? 0,
+      status: widget.task?.status ?? TaskStatus.pending,
+      manualImportance: widget.task?.manualImportance ?? ImportanceLevel.normal,
+      completedAt: widget.task?.completedAt,
+      createdAt: widget.task?.createdAt,
     );
 
-    final result = isEditMode
-        ? await service.saveTaskChanges(task)
-        : await service.createTask(task);
+    try {
+      final result = isEditMode
+          ? await _taskService.saveTaskChanges(task)
+          : await _taskService.createTask(task);
 
+      if (!mounted) return;
+
+      _showMessage(result.message);
+
+      if (result.success) {
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _showMessage('Failed to save task: $e');
+    }
+  }
+
+  void _showMessage(String message) {
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(result.message)),
-    );
-
-    if (result.success) {
-      Navigator.pop(context);
-    }
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return Center(
+        child: Padding(
+          padding: AppSpacing.screen,
+          child: Text(
+            'No user logged in.',
+            textAlign: TextAlign.center,
+            style: context.text.bodyLarge?.copyWith(
+              color: context.colors.onSurfaceVariant,
+            ),
+          ),
+        ),
+      );
+    }
+
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: AppSpacing.screen,
       child: Column(
         children: [
           TextField(
             controller: titleController,
-            decoration: const InputDecoration(labelText: "Title"),
+            decoration: const InputDecoration(labelText: 'Title'),
           ),
 
-          const SizedBox(height: 10),
+          AppSpacing.gapLg,
 
-          TextField(
-            controller: courseIDController,
-            keyboardType: TextInputType.text,
-            textCapitalization: TextCapitalization.characters,
-            onChanged: (value){
-              courseIDController.value = TextEditingValue(
-                text: value.toUpperCase(),
-                selection: TextSelection.collapsed(offset: value.toUpperCase().length),
+          StreamBuilder<List<Course>>(
+            stream: _courseRepository.getCoursesForUser(user.uid),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const LinearProgressIndicator();
+              }
+
+              if (snapshot.hasError) {
+                return Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Unable to load courses: ${snapshot.error}',
+                    style: context.text.bodyMedium?.copyWith(
+                      color: context.colors.error,
+                    ),
+                  ),
+                );
+              }
+
+              final courses = snapshot.data ?? [];
+
+              if (courses.isEmpty) {
+                return Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'No courses found. Add a course from your profile before creating tasks.',
+                    style: context.text.bodyMedium?.copyWith(
+                      color: context.colors.onSurfaceVariant,
+                    ),
+                  ),
+                );
+              }
+
+              return DropdownButtonFormField<String>(
+                initialValue: selectedCourseId,
+                decoration: const InputDecoration(labelText: 'Course'),
+                items: courses.map((course) {
+                  return DropdownMenuItem<String>(
+                    value: course.id,
+                    child: Text(course.displayName),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    selectedCourseId = value;
+                  });
+                },
               );
             },
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
-              LengthLimitingTextInputFormatter(8),
-            ],
-            decoration: const InputDecoration(
-              labelText: "Course ID (e.g. ECON2002)",
-            ),
           ),
 
-          const SizedBox(height: 20),
+          AppSpacing.gapLg,
 
           TextField(
             controller: descController,
-            decoration: const InputDecoration(labelText: "Description"),
-          ),
-
-          const SizedBox(height: 20),
-
-          const SizedBox(height: 20),
-
-          TextField(
-            controller: hoursController,
-            keyboardType: TextInputType.number,
             decoration: const InputDecoration(
-              labelText: "Estimated Hours",
-              hintText: "Enter number of hours",
+              labelText: 'Description',
+              hintText: 'Optional',
             ),
           ),
 
-          GestureDetector(
+          AppSpacing.gapLg,
+
+          TextField(
+            controller: hoursController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
+              labelText: 'Estimated Hours',
+              hintText: 'Enter number of hours',
+            ),
+          ),
+
+          AppSpacing.gapLg,
+
+          TextField(
+            controller: deadlineController,
+            readOnly: true,
             onTap: pickDate,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                selectedDate == null
-                    ? "Select Deadline"
-                    : "${selectedDate!.month}/${selectedDate!.day}/${selectedDate!.year}",
-                style: TextStyle(
-                  fontSize: 16,
-                  color: selectedDate == null
-                      ? Colors.grey
-                      : Colors.black,
-                ),
-              ),
+            decoration: const InputDecoration(
+              labelText: 'Deadline',
+              hintText: 'Select Deadline',
+              suffixIcon: Icon(Icons.calendar_today),
             ),
           ),
 
@@ -173,7 +258,7 @@ class _AddEditTaskFormState extends State<AddEditTask> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: saveTask,
-              child: Text(isEditMode ? "Update Task" : "Add Task"),
+              child: Text(isEditMode ? 'Update Task' : 'Add Task'),
             ),
           ),
         ],

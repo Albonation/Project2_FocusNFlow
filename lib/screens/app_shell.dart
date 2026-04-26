@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:focus_n_flow/screens/courses_tasks_screen.dart';
+import 'package:focus_n_flow/screens/profile_screen.dart';
 import 'package:focus_n_flow/screens/student_dashboard_screen.dart';
+import '../theme/theme_controller.dart';
 
 class AppShell extends StatefulWidget{
-  const AppShell({super.key});
+  final ThemeController themeController;
+  const AppShell({super.key, required this.themeController});
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -22,6 +25,7 @@ class _AppShellState extends State<AppShell> {
     _screens = [
       StudentDashboardScreen(),
       CoursesTasksScreen(),
+      ProfileScreen(themeController: widget.themeController),
       //GroupChatScreen(),
       //WeeklyPlannerScreen(),
     ];
@@ -48,7 +52,7 @@ class _AppShellState extends State<AppShell> {
         child: BottomNavigationBar(
           currentIndex: _selectedIndex,
           onTap: (index) async {
-            if (index == 2){
+            if (index == 3){
               await _logout();
               return;
             }
@@ -76,6 +80,10 @@ class _AppShellState extends State<AppShell> {
             //  icon: Icon(Icons.checklist),
             //  label: 'Weekly Planner',
             //),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.person),
+                label: 'Profile',
+            ),
             BottomNavigationBarItem(
               icon: Icon(Icons.logout),
               label: 'Logout',

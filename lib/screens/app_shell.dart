@@ -30,12 +30,12 @@ class _AppShellState extends State<AppShell> {
         return const CoursesTasksScreen();
 
       case 2:
+        return const WeeklyPlannerScreen();
+
+      case 3:
         return ProfileScreen(
           themeController: widget.themeController,
         );
-
-      case 3:
-        return const WeeklyPlannerScreen();
 
       default:
         return const StudentDashboardScreen();

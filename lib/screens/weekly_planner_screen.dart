@@ -44,7 +44,7 @@ class WeeklyPlannerScreen extends StatelessWidget{
     return StreamBuilder<List<Task>>(
       stream: repository.getTasksForUser(userId),
       builder: (context, snapshot){
-        if (!snapshot.connectionState == ConnectionState.waiting){
+        if (snapshot.connectionState == ConnectionState.waiting){
           return const Scaffold(
             body: Center(child: Text("Add tasks to generate weekly plan")),
           );
@@ -61,7 +61,7 @@ class WeeklyPlannerScreen extends StatelessWidget{
           body: ListView(
             padding: AppSpacing.screen,
             children: plan.entries.map((entry){
-              final day = entry,key;
+              final day = entry.key;
               final tasksForDay = entry.value;
 
               return Card(

@@ -13,6 +13,10 @@ class StudyRoomRepository {
     return _firestore.collection('studyRooms');
   }
 
+  CollectionReference<Map<String, dynamic>> get _userMembershipCollection {
+    return _firestore.collection('studyRoomMemberships');
+  }
+
   Stream<List<StudyRoom>> watchStudyRooms() {
     return _roomsCollection
         .where('isActive', isEqualTo: true)
@@ -68,6 +72,21 @@ class StudyRoomRepository {
         });
   }
 
+  Stream<String?> watchCurrentJoinedRoomId(String userId) {
+    return _userMembershipCollection.doc(userId).snapshots().map((snapshot) {
+      if (!snapshot.exists) {
+        return null;
+      }
+
+      final roomId = snapshot.data()?['roomId'];
+      if (roomId is String) {
+        return roomId;
+      }
+
+      return null;
+    });
+  }
+
   Future<StudyRoom?> getStudyRoomById(String roomId) async {
     final doc = await _roomsCollection.doc(roomId).get();
 
@@ -99,10 +118,21 @@ class StudyRoomRepository {
     });
   }
 
+  //this method determines if a user is currently checked into the given room
+  //the global membership collection is checked first to enforce the one room at a time rule
   Future<bool> isUserInRoom({
     required String roomId,
     required String userId,
   }) async {
+    final userMembershipDoc = await _userMembershipCollection.doc(userId).get();
+    if (userMembershipDoc.exists) {
+      final joinedRoomId = userMembershipDoc.data()?['roomId'];
+      if (joinedRoomId is String) {
+        return joinedRoomId == roomId;
+      }
+    }
+
+    //this is really just a fallback, checking the rooms subcollection of members
     final memberDoc = await _roomsCollection
         .doc(roomId)
         .collection('members')
@@ -112,14 +142,16 @@ class StudyRoomRepository {
     return memberDoc.exists;
   }
 
-  //this method uses a firestore transaction so two users cannot both join
-  //the same room at the same time
+  //this method will attempt to add a user to a room
+  //after performing various checks guarded by a firestore transaction
   Future<bool> joinRoom({
     required String roomId,
     required String userId,
   }) async {
+    //references to room, user membership in this room, and user's global study room membership
     final roomRef = _roomsCollection.doc(roomId);
     final memberRef = roomRef.collection('members').doc(userId);
+    final userMembershipRef = _userMembershipCollection.doc(userId);
 
     return _firestore.runTransaction<bool>((transaction) async {
       final roomSnapshot = await transaction.get(roomRef);
@@ -133,7 +165,12 @@ class StudyRoomRepository {
       if (!room.isActive) {
         throw Exception('Study room is not active.');
       }
-
+      //is user checked in to another room already
+      final userMembershipSnapshot = await transaction.get(userMembershipRef);
+      if (userMembershipSnapshot.exists) {
+        return false;
+      }
+      //is user checked in to this specific room already
       final memberSnapshot = await transaction.get(memberRef);
       if (memberSnapshot.exists) {
         return false;
@@ -144,8 +181,19 @@ class StudyRoomRepository {
       }
 
       final newOccupancy = room.currentOccupancy + 1;
-
-      transaction.set(memberRef, {'joinedAt': FieldValue.serverTimestamp()});
+      //add user to this room's members collection
+      transaction.set(memberRef, {
+        'userId': userId,
+        'joinedAt': FieldValue.serverTimestamp(),
+      });
+      //add user to this room in the global room membership collection
+      transaction.set(userMembershipRef, {
+        'roomId': roomId,
+        'userId': userId,
+        'joinedAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      //update room document
       transaction.update(roomRef, {
         'currentOccupancy': newOccupancy,
         'isFull': newOccupancy >= room.capacity,
@@ -162,8 +210,10 @@ class StudyRoomRepository {
     required String roomId,
     required String userId,
   }) async {
+    //references to room, user membership in this room, and user's global study room membership
     final roomRef = _roomsCollection.doc(roomId);
     final memberRef = roomRef.collection('members').doc(userId);
+    final userMembershipRef = _userMembershipCollection.doc(userId);
 
     return _firestore.runTransaction<bool>((transaction) async {
       final roomSnapshot = await transaction.get(roomRef);
@@ -173,7 +223,18 @@ class StudyRoomRepository {
       }
 
       final memberSnapshot = await transaction.get(memberRef);
+      final userMembershipSnapshot = await transaction.get(userMembershipRef);
+      //does global study room membership show this uer in this room
+      final joinedRoomId = userMembershipSnapshot.data()?['roomId'];
+      final isMembershipForRoom =
+          joinedRoomId is String && joinedRoomId == roomId;
+
+      //user not member of this room but global study room membership says yes
       if (!memberSnapshot.exists) {
+        if (isMembershipForRoom) {
+          transaction.delete(userMembershipRef);
+        }
+
         return false;
       }
 
@@ -181,8 +242,13 @@ class StudyRoomRepository {
       final newOccupancy = room.currentOccupancy > 0
           ? room.currentOccupancy - 1
           : 0;
-
+      //remove user from members subcollection of the room document
+      //and global study room membership if it exists
       transaction.delete(memberRef);
+      if (isMembershipForRoom) {
+        transaction.delete(userMembershipRef);
+      }
+      //update study room document values
       transaction.update(roomRef, {
         'currentOccupancy': newOccupancy,
         'isFull': newOccupancy >= room.capacity,

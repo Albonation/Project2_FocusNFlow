@@ -1,8 +1,6 @@
 //whether a task can be completed, completing a task, validating task data
 //essentially the rules and logic for the task system
 //importing necessarry packages
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 import '../models/task_model.dart';
 import '../repositories/task_repository.dart';
 
@@ -225,17 +223,3 @@ class TaskActionResult {
     required this.message,
   });
 } //end of TaskActionResult class
-
-//this is being saved for later use in the course layers
-/*String? validateCourseId(String? courseId) {
-    if (courseId == null || courseId.trim().isEmpty) {
-      return 'Course ID is missing.';
-    }
-    final regex = RegExp(r'^[A-Z]{3,4}[0-9]{4}$');
-
-    if (!regex.hasMatch(courseId)){
-      return "Format must be like ECON1002 (3-4 letters + 4 numbers)";
-    }
-
-    return null;
-  }*/

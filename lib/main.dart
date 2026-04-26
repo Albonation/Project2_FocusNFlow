@@ -32,7 +32,7 @@ class MyApp extends StatelessWidget {
           darkTheme: AppTheme.darkTheme,
           themeMode: themeController.themeMode,
           debugShowCheckedModeBanner: false,
-          home: const AuthGate(),
+          home: AuthGate(themeController: themeController),
         );
       },
     );

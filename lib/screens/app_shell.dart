@@ -35,7 +35,7 @@ class _AppShellState extends State<AppShell> {
         );
 
       case 3:
-        return const WeeklyPlannerScreen(userId: , repository: repository)
+        return const WeeklyPlannerScreen();
 
       default:
         return const StudentDashboardScreen();

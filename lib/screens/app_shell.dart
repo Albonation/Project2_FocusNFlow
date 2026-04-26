@@ -38,10 +38,6 @@ class _AppShellState extends State<AppShell> {
     }
   }
 
-  Future<void> _logout() async {
-    await FirebaseAuth.instance.signOut();
-  }
-
   @override
   Widget build(BuildContext context){
     return Scaffold(
@@ -57,16 +53,9 @@ class _AppShellState extends State<AppShell> {
         child: BottomNavigationBar(
           currentIndex: _selectedIndex,
           onTap: (index) async {
-            if (index == 3){
-              await _logout();
-              return;
-            }
-
-            if(index >= 0 && index <= 2){
-              setState(() {
-                _selectedIndex = index;
-              });
-            }
+            setState(() {
+              _selectedIndex = index;
+            });
           },
           items: const [
             BottomNavigationBarItem(
@@ -91,12 +80,9 @@ class _AppShellState extends State<AppShell> {
                 icon: Icon(Icons.person),
                 label: 'Profile',
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.logout),
-              label: 'Logout',
-            ),
-
-      ]))
+          ],
+        ),
+      ),
     );
   }
 }

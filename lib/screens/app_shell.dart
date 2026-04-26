@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:focus_n_flow/screens/courses_tasks_screen.dart';
 import 'package:focus_n_flow/screens/profile_screen.dart';
 import 'package:focus_n_flow/screens/student_dashboard_screen.dart';
+import 'package:focus_n_flow/screens/weekly_planner_screen.dart';
 import '../theme/theme_controller.dart';
 
 class AppShell extends StatefulWidget{
@@ -32,6 +33,9 @@ class _AppShellState extends State<AppShell> {
         return ProfileScreen(
           themeController: widget.themeController,
         );
+
+      case 3:
+        return const WeeklyPlannerScreen(userId: , repository: repository)
 
       default:
         return const StudentDashboardScreen();
@@ -72,10 +76,10 @@ class _AppShellState extends State<AppShell> {
             //  icon: Icon(Icons.group),
             //  label: 'Group Chat',
             //),
-            //BottomNavigationBarItem(
-            //  icon: Icon(Icons.checklist),
-            //  label: 'Weekly Planner',
-            //),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.checklist),
+              label: 'Weekly Planner',
+            ),
             BottomNavigationBarItem(
                 icon: Icon(Icons.person),
                 label: 'Profile',

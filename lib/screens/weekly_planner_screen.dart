@@ -1,101 +1,77 @@
 import 'package:flutter/material.dart';
-import 'package:focus_n_flow/models/task_model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:focus_n_flow/repositories/task_repository.dart';
-import 'package:focus_n_flow/theme/app_spacing.dart';
-import 'package:focus_n_flow/theme/app_theme_extensions.dart';
+import 'package:focus_n_flow/services/weekly_planner_service.dart';
+import 'package:focus_n_flow/widgets/weekly_planner_widgets/weekly_plan_section.dart';
 
-class WeeklyPlannerScreen extends StatelessWidget{
-  final String userId;
-  final TaskRepository repository;
-
-  const WeeklyPlannerScreen({
-    super.key,
-    required this.userId,
-    required this.repository,
-  });
-
-  Map<String, List<Task>> _generatePlan(List<Task> tasks){
-    final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-    final sorted = [...tasks];
-
-    sorted.sort((a, b){
-      return b.priorityScore.compareTo(a.priorityScore);
-    });
-
-    final plan = <String, List<Task>>{};
-
-    for (int i = 0; i < sorted.length; i++){
-      final day = days[i % 7];
-      plan.putIfAbsent(day, () => []);
-      plan[day]!.add(sorted[i]);
-    }
-
-    return plan;
-  }
+class WeeklyPlannerScreen extends StatefulWidget {
+  const WeeklyPlannerScreen({super.key});
 
   @override
-  Widget build(BuildContext context){
-    return StreamBuilder<List<Task>>(
-      stream: repository.getTasksForUser(userId),
-      builder: (context, snapshot){
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
+  State<WeeklyPlannerScreen> createState() => _WeeklyPlannerScreenState();
+}
 
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Scaffold(
-            body: Center(child: Text("Add tasks to generate weekly plan")),
-          );
-        }
+class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
+  final TaskRepository _repository = TaskRepository();
+  final WeeklyPlannerService _service = WeeklyPlannerService();
 
-        final tasks = snapshot.data ?? [];
-        final plan = _generatePlan(tasks);
+  @override
+  Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
 
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text("Weekly Study Plan"),
-            centerTitle: true,
-          ),
-          body: ListView(
-            padding: AppSpacing.screen,
-            children: plan.entries.map((entry){
-              final day = entry.key;
-              final tasksForDay = entry.value;
+    if (user == null) {
+      return const Scaffold(
+        body: Center(child: Text("No user logged in")),
+      );
+    }
 
-              return Card(
-                margin: const EdgeInsets.only(bottom: 16),
-                child: Padding(
-                  padding: AppSpacing.card,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        day,
-                        style: context.text.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      AppSpacing.gapMd,
-                      ...tasksForDay.map((task){
-                        return ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(task.title),
-                          subtitle: Text(
-                            "Due: ${task.deadline.toLocal()}",
-                          ),
-                        );
-                      }),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        );
-      },
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Weekly Study Plan"),
+      ),
+      body: WeeklyPlanSection(
+        userId: user.uid,
+        repository: _repository,
+        service: _service,
+      ),
+    );
+  }
+}import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:focus_n_flow/repositories/task_repository.dart';
+import 'package:focus_n_flow/services/weekly_planner_service.dart';
+import 'package:focus_n_flow/widgets/weekly_planner_widgets/weekly_plan_section.dart';
+
+class WeeklyPlannerScreen extends StatefulWidget {
+  const WeeklyPlannerScreen({super.key});
+
+  @override
+  State<WeeklyPlannerScreen> createState() => _WeeklyPlannerScreenState();
+}
+
+class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
+  final TaskRepository _repository = TaskRepository();
+  final WeeklyPlannerService _service = WeeklyPlannerService();
+
+  @override
+  Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return const Scaffold(
+        body: Center(child: Text("No user logged in")),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Weekly Study Plan"),
+      ),
+      body: WeeklyPlanSection(
+        userId: user.uid,
+        repository: _repository,
+        service: _service,
+      ),
     );
   }
 }

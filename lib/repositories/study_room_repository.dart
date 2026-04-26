@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/study_room_model.dart';
 
+//this repository layer interacts directly with firestore to perform CRUD operations
+//it also manages room occupancy and membership
 class StudyRoomRepository {
   final FirebaseFirestore _firestore;
 
@@ -110,6 +112,8 @@ class StudyRoomRepository {
     return memberDoc.exists;
   }
 
+  //this method uses a firestore transaction so two users cannot both join
+  //the same room at the same time
   Future<bool> joinRoom({
     required String roomId,
     required String userId,
@@ -152,6 +156,8 @@ class StudyRoomRepository {
     });
   }
 
+  //this method also uses a firestore transaction to ensure that occupancy is updated correctly
+  //the transaction checks help the repository update multiple data points after one event
   Future<bool> leaveRoom({
     required String roomId,
     required String userId,

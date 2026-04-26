@@ -16,19 +16,26 @@ class AppShell extends StatefulWidget{
 class _AppShellState extends State<AppShell> {
   int _selectedIndex = 0;
 
-  late final List<Widget> _screens;
-
   @override
   void initState(){
     super.initState();
-  //Unfinished screens commented out for testing
-    _screens = [
-      StudentDashboardScreen(),
-      CoursesTasksScreen(),
-      ProfileScreen(themeController: widget.themeController),
-      //GroupChatScreen(),
-      //WeeklyPlannerScreen(),
-    ];
+  }
+  Widget _buildScreen() {
+    switch (_selectedIndex) {
+      case 0:
+        return const StudentDashboardScreen();
+
+      case 1:
+        return const CoursesTasksScreen();
+
+      case 2:
+        return ProfileScreen(
+          themeController: widget.themeController,
+        );
+
+      default:
+        return const StudentDashboardScreen();
+    }
   }
 
   Future<void> _logout() async {
@@ -38,9 +45,7 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context){
     return Scaffold(
-      body: _selectedIndex < _screens.length
-          ? _screens[_selectedIndex]
-          : const StudentDashboardScreen(),
+      body: _buildScreen(),
       bottomNavigationBar: DecoratedBox(
         decoration: BoxDecoration(
           border: Border(
@@ -57,9 +62,11 @@ class _AppShellState extends State<AppShell> {
               return;
             }
 
-            setState((){
-              _selectedIndex = index;
-            });
+            if(index >= 0 && index <= 2){
+              setState(() {
+                _selectedIndex = index;
+              });
+            }
           },
           items: const [
             BottomNavigationBarItem(

@@ -18,8 +18,17 @@ class AppTheme {
       warning: Color(0xFFF97316),
       danger: Color(0xFFEF4444),
 
-      surfaceSoft: Color(0xFFF8F6F6),//0xFFF8FAFC
-      surfaceMuted: Color(0xFFB4B6BC),
+      //slightly warm pearl off-white
+      /*surfaceSoft: Color(0xFFFAFAF9),
+      surfaceMuted: Color(0xFFF5F3EF),
+      surfaceStrong: Color(0xFFE7E5E4),
+
+      cardBorder: Color(0xFFE7E5E4),
+      navBorder: Color(0xFFD6D3D1),*/
+
+      //subtle blue-gray
+      surfaceSoft: Color(0xFFF8FAFC),
+      surfaceMuted: Color(0xFFF1F5F9),
       surfaceStrong: Color(0xFFE2E8F0),
 
       cardBorder: Color(0xFFE2E8F0),
@@ -45,12 +54,30 @@ class AppTheme {
       warning: Color(0xFFFB923C),
       danger: Color(0xFFF87171),
 
-      surfaceSoft: Color(0xFF020617),
+      //blue-black
+      surfaceSoft: Color(0xFF030712),
+      surfaceMuted: Color(0xFF0B1220),
+      surfaceStrong: Color(0xFF172033),
+
+      cardBorder: Color(0xFF263247),
+      navBorder: Color(0xFF263247),
+
+      //original, looks great
+      /*surfaceSoft: Color(0xFF020617),
       surfaceMuted: Color(0xFF0F172A),
       surfaceStrong: Color(0xFF1E293B),
 
       cardBorder: Color(0xFF334155),
-      navBorder: Color(0xFF334155),
+      navBorder: Color(0xFF334155),*/
+
+      //soft charcoal, variant that looks good
+      /*surfaceSoft: Color(0xFF0A0A0A),
+      surfaceMuted: Color(0xFF171717),
+      surfaceStrong: Color(0xFF262626),
+
+      cardBorder: Color(0xFF3F3F46),
+      navBorder: Color(0xFF3F3F46),*/
+
     );
 
     return _buildTheme(

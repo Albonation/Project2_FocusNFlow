@@ -49,6 +49,52 @@ class WeeklyPlannerScreen extends StatelessWidget{
             body: Center(child: Text("Add tasks to generate weekly plan")),
           );
         }
-      })
+
+        final tasks = snapshot.data!;
+        final plan = _generatePlan(tasks);
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text("Weekly Study Plan"),
+            centerTitle: true,
+          ),
+          body: ListView(
+            padding: AppSpacing.screen,
+            children: plan.entries.map((entry){
+              final day = entry,key;
+              final tasksForDay = entry.value;
+
+              return Card(
+                margin: const EdgeInsets.only(bottom: 16),
+                child: Padding(
+                  padding: AppSpacing.card,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        day,
+                        style: context.text.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      AppSpacing.gapMd,
+                      ...tasksForDay.map((task){
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(task.title),
+                          subtitle: Text(
+                            "Due: ${task.deadline.toLocal()}",
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        );
+      },
+    );
   }
 }

@@ -1,20 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:focus_n_flow/models/task_model.dart';
 import 'package:focus_n_flow/repositories/task_repository.dart';
-import 'package:focus_n_flow/services/student_dashboard_service.dart';
 import 'package:focus_n_flow/theme/app_spacing.dart';
 import 'package:focus_n_flow/theme/app_theme_extensions.dart';
 
 class WeeklyPlannerScreen extends StatelessWidget{
   final String userId;
   final TaskRepository repository;
-  final StudentDashboardService service;
 
   const WeeklyPlannerScreen({
     super.key,
     required this.userId,
     required this.repository,
-    required this.service,
   });
 
   Map<String, List<Task>> _generatePlan(List<Task> tasks){
@@ -23,9 +20,7 @@ class WeeklyPlannerScreen extends StatelessWidget{
     final sorted = [...tasks];
 
     sorted.sort((a, b){
-      final aScore = service.countCompletedTasks([a]);
-      final bScore = service.countCompletedTasks([b]);
-      return bScore.compareTo(aScore);
+      return b.priorityScore.compareTo(a.priorityScore);
     });
 
     final plan = <String, List<Task>>{};

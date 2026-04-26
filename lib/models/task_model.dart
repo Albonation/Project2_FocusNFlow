@@ -188,11 +188,12 @@ class Task {
     final now = DateTime.now();
 
     final daysLeft = deadline.difference(now).inDays;
-    final urgencyScore = daysLeft <= 0
-        ? 100
-        : (30 - daysLeft).clamp(0, 30).toDouble();
 
     final effortScore = estimatedHours * 2;
+
+    final urgencyScore = daysLeft <= 0
+        ? 50
+        : (30 - daysLeft).clamp(0, 30).toDouble();
 
     final importanceScore = switch (manualImportance) {
       ImportanceLevel.low => 10,

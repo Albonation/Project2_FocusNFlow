@@ -44,13 +44,19 @@ class WeeklyPlannerScreen extends StatelessWidget{
     return StreamBuilder<List<Task>>(
       stream: repository.getTasksForUser(userId),
       builder: (context, snapshot){
-        if (snapshot.connectionState == ConnectionState.waiting){
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return const Scaffold(
             body: Center(child: Text("Add tasks to generate weekly plan")),
           );
         }
 
-        final tasks = snapshot.data!;
+        final tasks = snapshot.data ?? [];
         final plan = _generatePlan(tasks);
 
         return Scaffold(

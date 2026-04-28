@@ -200,23 +200,34 @@ class _AddEditTaskFormState extends State<AddEditTask> {
                 );
               }
 
-              return DropdownButtonFormField<String>(
-                initialValue: selectedCourseId,
-                decoration: const InputDecoration(labelText: 'Course'),
-                items: courses.map((course) {
-                  return DropdownMenuItem<String>(
-                    value: course.id,
-                    child: Text(
-                      course.displayName,
-                      overflow: TextOverflow.ellipsis,
+              return SizedBox(
+                width: double.infinity,
+                child: DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  initialValue: selectedCourseId,
+                  decoration: const InputDecoration(
+                    labelText: 'Course',
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 16,
                     ),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    selectedCourseId = value;
-                  });
-                },
+                  ),
+                  items: courses.map((course) {
+                    return DropdownMenuItem<String>(
+                      value: course.id,
+                      child: Text(
+                        course.displayName,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedCourseId = value;
+                    });
+                  },
+                ),
               );
             },
           ),

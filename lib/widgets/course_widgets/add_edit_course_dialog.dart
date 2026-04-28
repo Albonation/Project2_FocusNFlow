@@ -8,12 +8,14 @@ class AddEditCourseDialog extends StatefulWidget {
   final String userId;
   final Course? course;
   final Future<void> Function(Course course) onSave;
+  final VoidCallback? onDelete;
 
   const AddEditCourseDialog({
     super.key,
     required this.userId,
     required this.onSave,
     this.course,
+    this.onDelete,
   });
 
   bool get isEditMode => course != null;
@@ -151,10 +153,25 @@ class _AddEditCourseDialogState extends State<AddEditCourseDialog> {
         ],
       ),
       actions: [
+        if (widget.isEditMode && widget.onDelete != null)
+          TextButton(
+            onPressed: _isSaving ? null : widget.onDelete,
+            child: Text(
+              'Delete',
+              style: TextStyle(
+                color: context.appColors.danger,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+
+        const Spacer(),
+
         TextButton(
           onPressed: _isSaving ? null : () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
+
         TextButton(
           onPressed: _isSaving ? null : _saveCourse,
           child: Text(

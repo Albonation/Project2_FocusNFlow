@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'package:focus_n_flow/models/course_model.dart';
 import 'package:focus_n_flow/repositories/course_repository.dart';
 import 'package:focus_n_flow/services/course_service.dart';
@@ -44,11 +45,24 @@ class _CoursesSectionState extends State<CoursesSection> {
   Future<void> _showEditCourseDialog(Course course) async {
     await showDialog(
       context: context,
-      builder: (_) {
+      builder: (dialogContext) {
         return AddEditCourseDialog(
           userId: widget.userId,
           course: course,
           onSave: _saveCourseChanges,
+          onDelete: () async {
+            Navigator.pop(dialogContext);
+
+            final shouldDelete = await _showDeleteCourseDialog(course);
+
+            if (!mounted) return;
+
+            if (shouldDelete) {
+              await _deleteCourse(course);
+            } else {
+              await _showEditCourseDialog(course);
+            }
+          },
         );
       },
     );
@@ -90,8 +104,8 @@ class _CoursesSectionState extends State<CoursesSection> {
     }
   }
 
-  void _showDeleteCourseDialog(Course course) {
-    showDialog(
+  Future<bool> _showDeleteCourseDialog(Course course) async {
+    final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
@@ -108,14 +122,13 @@ class _CoursesSectionState extends State<CoursesSection> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(dialogContext);
+                Navigator.pop(dialogContext, false);
               },
               child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () {
-                Navigator.pop(dialogContext);
-                _deleteCourse(course);
+                Navigator.pop(dialogContext, true);
               },
               child: Text(
                 'Delete',
@@ -129,6 +142,8 @@ class _CoursesSectionState extends State<CoursesSection> {
         );
       },
     );
+
+    return shouldDelete ?? false;
   }
 
   void _showMessage(String message) {
@@ -181,20 +196,29 @@ class _CoursesSectionState extends State<CoursesSection> {
                   );
                 }
 
-                return Wrap(
-                  spacing: AppSpacing.sm,
-                  runSpacing: AppSpacing.sm,
-                  children: courses.map((course) {
-                    return CourseChipCard(
-                      course: course,
-                      onTap: () {
-                        _showEditCourseDialog(course);
-                      },
-                      onDelete: () {
-                        _showDeleteCourseDialog(course);
-                      },
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    const columns = 2;
+                    final totalSpacing = AppSpacing.sm * (columns - 1);
+                    final chipWidth =
+                        (constraints.maxWidth - totalSpacing) / columns;
+
+                    return Wrap(
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.sm,
+                      children: courses.map((course) {
+                        return SizedBox(
+                          width: chipWidth,
+                          child: CourseChipCard(
+                            course: course,
+                            onTap: () {
+                              _showEditCourseDialog(course);
+                            },
+                          ),
+                        );
+                      }).toList(),
                     );
-                  }).toList(),
+                  },
                 );
               },
             ),

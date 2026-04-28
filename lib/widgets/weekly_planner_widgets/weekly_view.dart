@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:focus_n_flow/models/task_model.dart';
 import 'package:focus_n_flow/services/weekly_planner_service.dart';
 
@@ -36,7 +37,19 @@ class WeeklyPlannerView extends StatelessWidget {
                 ...entry.value.map((task) {
                   return ListTile(
                     title: Text(task.title),
-                    subtitle: Text("Due: ${task.deadline}"),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Due: ${DateFormat('MMM dd, yyyy').format(task.deadline)}",
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          task.description,
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ],
+                    ),
                     trailing: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -44,7 +57,10 @@ class WeeklyPlannerView extends StatelessWidget {
                           task.priorityScore.toStringAsFixed(1),
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
-                        const Text("Priority", style: TextStyle(fontSize: 10)),
+                        const Text(
+                          "Priority",
+                          style: TextStyle(fontSize: 10),
+                        ),
                       ],
                     ),
                   );

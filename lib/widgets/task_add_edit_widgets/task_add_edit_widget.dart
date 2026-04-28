@@ -67,7 +67,7 @@ class _AddEditTaskFormState extends State<AddEditTask> {
     final picked = await showDatePicker(
       context: context,
       initialDate: selectedDate ?? DateTime.now(),
-      firstDate: DateTime.now(),
+      firstDate: DateTime(2020),
       lastDate: DateTime(2100),
     );
 
@@ -206,7 +206,10 @@ class _AddEditTaskFormState extends State<AddEditTask> {
                 items: courses.map((course) {
                   return DropdownMenuItem<String>(
                     value: course.id,
-                    child: Text(course.displayName),
+                    child: Text(
+                      course.displayName,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   );
                 }).toList(),
                 onChanged: (value) {

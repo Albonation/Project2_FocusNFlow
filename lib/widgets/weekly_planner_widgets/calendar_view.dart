@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:focus_n_flow/models/task_model.dart';
 import 'package:focus_n_flow/services/weekly_planner_service.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:intl/intl.dart';
 
 class CalendarPlannerView extends StatefulWidget {
   final List<Task> tasks;
@@ -49,7 +50,9 @@ class _CalendarPlannerViewState extends State<CalendarPlannerView> {
             children: dayTasks.map((task) {
               return ListTile(
                 title: Text(task.title),
-                subtitle: Text("Due: ${task.deadline}"),
+                subtitle: Text(
+                  "Due: ${DateFormat('MMM dd, yyyy').format(task.deadline)}"
+                ),
                 trailing: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

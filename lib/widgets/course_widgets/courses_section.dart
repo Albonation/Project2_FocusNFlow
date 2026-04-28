@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'package:focus_n_flow/models/course_model.dart';
 import 'package:focus_n_flow/repositories/course_repository.dart';
 import 'package:focus_n_flow/services/course_service.dart';
@@ -11,10 +10,7 @@ import 'package:focus_n_flow/widgets/course_widgets/course_chip_card.dart';
 class CoursesSection extends StatefulWidget {
   final String userId;
 
-  const CoursesSection({
-    super.key,
-    required this.userId,
-  });
+  const CoursesSection({super.key, required this.userId});
 
   @override
   State<CoursesSection> createState() => _CoursesSectionState();
@@ -149,9 +145,9 @@ class _CoursesSectionState extends State<CoursesSection> {
   void _showMessage(String message) {
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -163,9 +159,7 @@ class _CoursesSectionState extends State<CoursesSection> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _CoursesHeader(
-              onAddCourse: _showAddCourseDialog,
-            ),
+            _CoursesHeader(onAddCourse: _showAddCourseDialog),
 
             AppSpacing.gapMd,
 
@@ -232,9 +226,7 @@ class _CoursesSectionState extends State<CoursesSection> {
 class _CoursesHeader extends StatelessWidget {
   final VoidCallback onAddCourse;
 
-  const _CoursesHeader({
-    required this.onAddCourse,
-  });
+  const _CoursesHeader({required this.onAddCourse});
 
   @override
   Widget build(BuildContext context) {
@@ -243,9 +235,7 @@ class _CoursesHeader extends StatelessWidget {
       children: [
         Text(
           'My Courses',
-          style: context.text.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: context.text.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         IconButton(
           tooltip: 'Add course',

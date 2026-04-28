@@ -87,9 +87,7 @@ class _AddEditCourseDialogState extends State<AddEditCourseDialog> {
     return AlertDialog(
       title: Text(
         widget.isEditMode ? 'Edit Course' : 'Add Course',
-        style: context.text.titleLarge?.copyWith(
-          fontWeight: FontWeight.bold,
-        ),
+        style: context.text.titleLarge?.copyWith(fontWeight: FontWeight.bold),
       ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
@@ -103,9 +101,7 @@ class _AddEditCourseDialogState extends State<AddEditCourseDialog> {
 
               _courseCodeController.value = TextEditingValue(
                 text: upper,
-                selection: TextSelection.collapsed(
-                  offset: upper.length,
-                ),
+                selection: TextSelection.collapsed(offset: upper.length),
               );
             },
             inputFormatters: [
@@ -132,9 +128,7 @@ class _AddEditCourseDialogState extends State<AddEditCourseDialog> {
 
           DropdownButtonFormField<double>(
             initialValue: _selectedWeight,
-            decoration: const InputDecoration(
-              labelText: 'Course Weight',
-            ),
+            decoration: const InputDecoration(labelText: 'Course Weight'),
             items: const [
               DropdownMenuItem(value: 1, child: Text('1 - Low')),
               DropdownMenuItem(value: 2, child: Text('2')),

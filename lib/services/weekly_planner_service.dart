@@ -21,7 +21,7 @@ class WeeklyPlannerService {
     return plan;
   }
 
-  List<Task> filterTasksByData(List<Task> tasks, DateTime date){
+  List<Task> filterTasksByDate(List<Task> tasks, DateTime date){
     return tasks.where((t)=>
       t.deadline.year == date.year &&
       t.deadline.month == date.month &&

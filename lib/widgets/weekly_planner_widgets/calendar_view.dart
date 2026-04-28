@@ -20,13 +20,14 @@ class CalendarPlannerView extends StatefulWidget {
 
 class _CalendarPlannerViewState extends State<CalendarPlannerView> {
   DateTime focusedDay = DateTime.now();
-  DateTime? selectedDay;
+  DateTime selectedDay = DateTime.now();
 
   @override
   Widget build(BuildContext context) {
-    final dayTasks = selectedDay == null
-        ? widget.tasks
-        : widget.service.filterTasksByDate(widget.tasks, selectedDay!);
+    final dayTasks = widget.service.filterTasksByDate(
+      widget.tasks,
+      selectedDay,
+    );
 
     return Column(
       children: [

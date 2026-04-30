@@ -1,73 +1,50 @@
+import 'package:focus_n_flow/models/planning_model.dart';
 import 'package:focus_n_flow/models/task_model.dart';
 
 class WeeklyPlannerService {
 
-  Map<String, List<Task>> generateWeeklyPlan(List<Task> tasks) {
+  Map<String, List<PlannedTask>> generateWeeklyPlan(List<Task> tasks) {
     final now = DateTime.now();
 
-    final upcomingDays = List.generate(
+    final days = List.generate(
       7,
-      (index) => DateTime(
-        now.year,
-        now.month,
-        now.day + index,
-      ),
+      (i) => DateTime(now.year, now.month, now.day + i),
     );
 
-    final activeTasks = tasks.where((task) {
-      return !task.isCompleted &&
-          !task.isOverdue;
-    }).toList();
+    final plan = <String, List<PlannedTask>>{};
+
+    for (final day in days) {
+      final label = "${day.month}/${day.day}";
+      plan[label] = [];
+    }
+
+    final activeTasks = tasks
+        .where((t) => !t.isCompleted && !t.isOverdue)
+        .toList();
 
     activeTasks.sort((a, b) {
-      final deadlineCompare =
-          a.deadline.compareTo(b.deadline);
-
-      if (deadlineCompare != 0) {
-        return deadlineCompare;
-      }
-
+      final deadlineCompare = a.deadline.compareTo(b.deadline);
+      if (deadlineCompare != 0) return deadlineCompare;
       return b.priorityScore.compareTo(a.priorityScore);
     });
 
-    final plan = <String, List<Task>>{};
-
-    for (final day in upcomingDays) {
-      final dayLabel = "${day.month}/${day.day}";
-      plan[dayLabel] = [];
-    }
-
     for (final task in activeTasks) {
-      final cleanDeadline = DateTime(
-        task.deadline.year,
-        task.deadline.month,
-        task.deadline.day,
-      );
+      double remainingHours = task.estimatedHours;
 
-      final availableDays = upcomingDays.where((day) {
-        final cleanDay = DateTime(
-          day.year,
-          day.month,
-          day.day,
+      final daysUntilDeadline = task.deadline.difference(now).inDays.clamp(1, 7);
+
+      final hoursPerDay = remainingHours / daysUntilDeadline;
+
+      for (int i = 0; i < daysUntilDeadline && i < 7; i++) {
+        final day = days[i];
+        final label = "${day.month}/${day.day}";
+
+        plan[label]!.add(
+          PlannedTask(
+            task: task,
+            hoursForDay: hoursPerDay,
+          ),
         );
-
-        return !cleanDay.isAfter(cleanDeadline);
-      }).toList();
-
-      if (availableDays.isEmpty) continue;
-
-      final hoursPerDay =
-          (task.estimatedHours / availableDays.length);
-
-      for (final day in availableDays) {
-        final dayLabel = "${day.month}/${day.day}";
-
-        final splitTask = task.copyWith(
-          description:
-              "${task.description}\nRecommended Study Time: ${hoursPerDay.toStringAsFixed(1)} hrs",
-        );
-
-        plan[dayLabel]!.add(splitTask);
       }
     }
 

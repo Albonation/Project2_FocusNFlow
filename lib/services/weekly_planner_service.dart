@@ -2,23 +2,25 @@ import 'package:focus_n_flow/models/planning_model.dart';
 import 'package:focus_n_flow/models/task_model.dart';
 
 class WeeklyPlannerService {
-  List<PlannedTask> generateSchedule(List<Task> tasks) {
+
+  /// Convert tasks → initial schedule (ONLY used once)
+  List<PlannedTask> createInitialPlan(List<Task> tasks) {
     final now = DateTime.now();
 
     final sorted = [...tasks]
       ..sort((a, b) => b.priorityScore.compareTo(a.priorityScore));
 
-    final List<PlannedTask> schedule = [];
+    final List<PlannedTask> result = [];
 
-    DateTime cursor = DateTime(now.year, now.month, now.day, 9); // 9AM start
+    DateTime cursor = DateTime(now.year, now.month, now.day, 9);
 
     for (final task in sorted) {
       double remaining = task.estimatedHours;
 
       while (remaining > 0) {
-        final chunk = remaining > 2 ? 2 : remaining; // max 2hr blocks
+        final chunk = remaining > 2 ? 2.0 : remaining;
 
-        schedule.add(
+        result.add(
           PlannedTask(
             taskId: task.id!,
             hoursForDay: chunk,
@@ -30,21 +32,22 @@ class WeeklyPlannerService {
 
         cursor = cursor.add(const Duration(hours: 2));
 
-        // move to next day after 8pm
         if (cursor.hour >= 20) {
           cursor = DateTime(cursor.year, cursor.month, cursor.day + 1, 9);
         }
       }
     }
 
-    return schedule;
+    return result;
   }
 
-  List<Task> filterTasksByDate(List<Task> tasks, DateTime date){
-    return tasks.where((t)=>
-      t.deadline.year == date.year &&
-      t.deadline.month == date.month &&
-      t.deadline.day == date.day
-    ).toList();
+  /// Helper: filter by week
+  List<PlannedTask> filterWeek(List<PlannedTask> tasks, DateTime weekStart) {
+    final end = weekStart.add(const Duration(days: 7));
+
+    return tasks.where((t) {
+      return t.plannedDate.isAfter(weekStart) &&
+             t.plannedDate.isBefore(end);
+    }).toList();
   }
 }

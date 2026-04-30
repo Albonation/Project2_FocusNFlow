@@ -2,18 +2,21 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:focus_n_flow/models/task_model.dart';
 
 class PlannedTask {
-  final String? id;
   final String taskId;
-  final Task? task; 
+  final Task? task;
   final double hoursForDay;
   final DateTime plannedDate;
 
+  final DateTime? startTime;
+  final DateTime? endTime;
+
   PlannedTask({
-    this.id,
     required this.taskId,
     this.task,
     required this.hoursForDay,
     required this.plannedDate,
+    this.startTime,
+    this.endTime,
   });
 
   /// Firestore write

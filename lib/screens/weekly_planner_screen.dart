@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:focus_n_flow/repositories/task_repository.dart';
-import 'package:focus_n_flow/services/weekly_planner_service.dart';
+import 'package:focus_n_flow/repositories/weekly_planner_repository.dart';
 import 'package:focus_n_flow/widgets/weekly_planner_widgets/weekly_planner_widget.dart';
 
 class WeeklyPlannerScreen extends StatefulWidget {
@@ -13,7 +13,7 @@ class WeeklyPlannerScreen extends StatefulWidget {
 
 class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
   final TaskRepository _repository = TaskRepository();
-  final WeeklyPlannerService _service = WeeklyPlannerService();
+  final WeeklyPlannerRepository _repo2 = WeeklyPlannerRepository();
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +32,7 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
       body: WeeklyPlannerWidget(
         userId: user.uid,
         repository: _repository,
-        service: _service,
+        plannerRepository: _repo2,
       ),
     );
   }

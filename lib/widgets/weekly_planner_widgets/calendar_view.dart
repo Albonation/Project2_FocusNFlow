@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:focus_n_flow/services/planner_service.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:focus_n_flow/models/planning_model.dart';
-import 'package:focus_n_flow/repositories/weekly_planner_repository.dart';
 
 class CalendarPlannerView extends StatefulWidget {
+  final PlannerController controller;
   final String userId;
-  final Stream<List<PlannedTask>> planStream;
-  final WeeklyPlannerRepository repository;
 
   const CalendarPlannerView({
     super.key,
+    required this.controller,
     required this.userId,
-    required this.planStream,
-    required this.repository,
   });
 
   @override
@@ -20,92 +18,101 @@ class CalendarPlannerView extends StatefulWidget {
       _CalendarPlannerViewState();
 }
 
-class _CalendarPlannerViewState
-    extends State<CalendarPlannerView> {
-
+class _CalendarPlannerViewState extends State<CalendarPlannerView> {
   DateTime focusedDay = DateTime.now();
   DateTime selectedDay = DateTime.now();
 
-  List<PlannedTask> _tasks = [];
-
-  List<PlannedTask> _tasksForDay(DateTime day) {
-    return _tasks.where((t) =>
-        isSameDay(t.plannedDate, day)).toList();
-  }
-
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<List<PlannedTask>>(
-      stream: widget.planStream,
-      builder: (context, snapshot) {
+    return Column(
+      children: [
+        //CALENDAR GRID
+        TableCalendar<PlannedTask>(
+          firstDay: DateTime.utc(2020),
+          lastDay: DateTime.utc(2030),
+          focusedDay: focusedDay,
 
-        if (snapshot.hasData) {
-          _tasks = snapshot.data!;
-        }
+          selectedDayPredicate: (day) =>
+              isSameDay(selectedDay, day),
 
-        return Column(
-          children: [
+          eventLoader: (day) =>
+              widget.controller.tasksForDay(day),
 
-            //CALENDAR GRID (DROP TARGET)
-            TableCalendar(
-              firstDay: DateTime.utc(2020),
-              lastDay: DateTime.utc(2030),
-              focusedDay: focusedDay,
-              selectedDayPredicate: (day) =>
-                  isSameDay(selectedDay, day),
+          onDaySelected: (selected, focused) {
+            setState(() {
+              selectedDay = selected;
+              focusedDay = focused;
+            });
+          },
 
-              eventLoader: _tasksForDay,
+          calendarBuilders: CalendarBuilders(
+            defaultBuilder: (context, day, _) {
+              final tasks = widget.controller.tasksForDay(day);
 
-              onDaySelected: (selected, focused) {
-                setState(() {
-                  selectedDay = selected;
-                  focusedDay = focused;
-                });
-              },
-
-              calendarBuilders: CalendarBuilders(
-                defaultBuilder: (context, day, focusedDay) {
-                  return DragTarget<PlannedTask>(
-                    onAcceptWithDetails: (task) async {
-                      await widget.repository.movePlannedTask(
-                        userId: widget.userId,
-                        taskId: task.taskId,
-                        newDate: day,
-                      );
-                    },
-
-                    builder: (context, candidate, rejected) {
-                      return Container(
-                        margin: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: candidate.isNotEmpty
-                              ? Colors.blue.shade100
-                              : null,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text('${day.day}'),
-                      );
-                    },
+              return DragTarget<PlannedTask>(
+                onAcceptWithDetails: (details) async {
+                  final task = details.data;
+                  
+                  await widget.controller.moveTask(
+                    task.taskId,
+                    day,
                   );
                 },
-              ),
-            ),
 
-            const SizedBox(height: 10),
+                builder: (context, candidate, rejected) {
+                  return Container(
+                    margin: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: candidate.isNotEmpty
+                          ? Colors.blue.shade100
+                          : tasks.isNotEmpty
+                              ? Colors.grey.shade200
+                              : null,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      '${day.day}',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
 
-            //TASK LIST (DRAG SOURCE)
-            Expanded(
-              child: ListView(
-                children: _tasksForDay(selectedDay).map((task) {
+        const SizedBox(height: 10),
+
+        //SELECTED DAY TASKS
+        Expanded(
+          child: Builder(
+            builder: (_) {
+              final dayTasks =
+                  widget.controller.tasksForDay(selectedDay);
+
+              if (dayTasks.isEmpty) {
+                return const Center(
+                  child: Text("No tasks scheduled for this day"),
+                );
+              }
+
+              return ListView.builder(
+                itemCount: dayTasks.length,
+                itemBuilder: (context, index) {
+                  final task = dayTasks[index];
 
                   return LongPressDraggable<PlannedTask>(
                     data: task,
 
                     feedback: Material(
+                      color: Colors.transparent,
                       child: Container(
                         padding: const EdgeInsets.all(8),
-                        color: Colors.blue,
+                        decoration: BoxDecoration(
+                          color: Colors.blue,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                         child: Text(
                           task.task?.title ?? "Task",
                           style: const TextStyle(
@@ -116,40 +123,31 @@ class _CalendarPlannerViewState
                     ),
 
                     childWhenDragging: Opacity(
-                      opacity: 0.3,
-                      child: _taskTile(task),
+                      opacity: 0.4,
+                      child: _tile(task),
                     ),
 
-                    child: _taskTile(task),
+                    child: _tile(task),
                   );
-                }).toList(),
-              ),
-            ),
-          ],
-        );
-      },
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _taskTile(PlannedTask task) {
-    final t = task.task;
-
+  Widget _tile(PlannedTask task) {
     return ListTile(
-      title: Text(t?.title ?? "Task"),
+      title: Text(task.task?.title ?? "Task"),
 
       subtitle: Text(
         "Study: ${task.hoursForDay.toStringAsFixed(1)} hrs",
       ),
 
-      trailing: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            t?.priorityScore.toStringAsFixed(1) ?? "-",
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const Text("Priority", style: TextStyle(fontSize: 10)),
-        ],
+      trailing: Text(
+        task.task?.priorityScore.toStringAsFixed(1) ?? "-",
       ),
     );
   }

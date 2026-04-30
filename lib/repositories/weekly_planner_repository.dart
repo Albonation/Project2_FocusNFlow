@@ -62,6 +62,29 @@ class WeeklyPlannerRepository {
     });
   }
 
+  //Move tasks in weekly view
+  Future<void> moveTask(
+    String userId,
+    String weekId,
+    String taskId,
+    DateTime newDate,
+  ) async {
+    final ref = FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('weekly_plans')
+        .doc(weekId)
+        .collection('tasks');
+
+    final snapshot = await ref.where('task_id', isEqualTo: taskId).get();
+
+    for (final doc in snapshot.docs) {
+      await doc.reference.update({
+        'planned_date': Timestamp.fromDate(newDate),
+      });
+    }
+  }
+
   /// DELETE EVENT (for reschedule replace logic)
   Future<void> deletePlannedTask(
     String userId,

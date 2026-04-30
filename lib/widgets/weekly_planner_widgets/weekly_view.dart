@@ -1,104 +1,119 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:focus_n_flow/models/planning_model.dart';
 import 'package:focus_n_flow/repositories/weekly_planner_repository.dart';
-import 'package:intl/intl.dart';
 
 class WeeklyPlannerView extends StatelessWidget {
   final String userId;
   final String weekId;
   final WeeklyPlannerRepository repository;
+  final Stream<List<PlannedTask>> planStream;
 
   const WeeklyPlannerView({
     super.key,
     required this.userId,
     required this.weekId,
     required this.repository,
+    required this.planStream,
   });
+
+  DateTime _normalize(DateTime d) =>
+      DateTime(d.year, d.month, d.day);
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<PlannedTask>>(
-      stream: repository.getPlan(userId, weekId),
+      stream: planStream,
       builder: (context, snapshot) {
-
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final plannedTasks = snapshot.data!;
+        final tasks = snapshot.data!;
 
-        final grouped = _groupByDate(plannedTasks);
+        final grouped = <DateTime, List<PlannedTask>>{};
 
-        final sortedKeys = grouped.keys.toList()
-          ..sort();
+        for (final t in tasks) {
+          final day = _normalize(t.plannedDate);
+          grouped.putIfAbsent(day, () => []);
+          grouped[day]!.add(t);
+        }
+
+        final days = grouped.keys.toList()..sort();
 
         return ListView(
           padding: const EdgeInsets.all(16),
-          children: sortedKeys.map((day) {
+          children: days.map((day) {
 
-            final tasks = grouped[day]!;
+            final dayTasks = grouped[day]!;
 
-            return Card(
-              margin: const EdgeInsets.only(bottom: 16),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+            return DragTarget<PlannedTask>(
+              onAccept: (draggedTask) async {
 
-                    Text(
-                      DateFormat('EEE, MMM d').format(day),
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
+                await repository.moveTask(
+                  userId,
+                  weekId,
+                  draggedTask.taskId,
+                  day,
+                );
+              },
 
-                    const SizedBox(height: 10),
+              builder: (context, candidate, rejected) {
+                return Card(
+                  color: candidate.isNotEmpty
+                      ? Colors.blue.shade50
+                      : null,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
 
-                    ...tasks.map((planned) {
-                      final task = planned.task;
-
-                      return ListTile(
-                        title: Text(task?.title ?? "Unknown"),
-
-                        subtitle: Text(
-                          "Study: ${planned.hoursForDay.toStringAsFixed(1)} hrs",
+                        Text(
+                          DateFormat('EEE, MMM d').format(day),
+                          style: Theme.of(context).textTheme.titleLarge,
                         ),
 
-                        trailing: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              task?.priorityScore.toStringAsFixed(1) ?? "-",
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                        const SizedBox(height: 10),
+
+                        ...dayTasks.map((task) {
+
+                          return LongPressDraggable<PlannedTask>(
+                            data: task,
+                            feedback: Material(
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                color: Colors.blue,
+                                child: Text(
+                                  task.task?.title ?? "Task",
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                              ),
                             ),
-                            const Text("Priority", style: TextStyle(fontSize: 10)),
-                          ],
-                        ),
-                      );
-                    }),
-                  ],
-                ),
-              ),
+
+                            child: ListTile(
+                              title: Text(task.task?.title ?? "Task"),
+
+                              subtitle: Text(
+                                "Study: ${task.hoursForDay.toStringAsFixed(1)} hrs",
+                              ),
+
+                              trailing: Text(
+                                task.task?.priorityScore.toStringAsFixed(1) ?? "-",
+                              ),
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                );
+              },
             );
           }).toList(),
         );
       },
     );
-  }
-
-  Map<DateTime, List<PlannedTask>> _groupByDate(List<PlannedTask> items) {
-    final map = <DateTime, List<PlannedTask>>{};
-
-    for (final item in items) {
-      final day = DateTime(
-        item.plannedDate.year,
-        item.plannedDate.month,
-        item.plannedDate.day,
-      );
-
-      map.putIfAbsent(day, () => []);
-      map[day]!.add(item);
-    }
-
-    return map;
   }
 }

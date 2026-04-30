@@ -2,66 +2,42 @@ import 'package:focus_n_flow/models/planning_model.dart';
 import 'package:focus_n_flow/models/task_model.dart';
 
 class WeeklyPlannerService {
-
-  Map<String, List<PlannedTask>> generateWeeklyPlan(List<Task> tasks) {
+  List<PlannedTask> generateSchedule(List<Task> tasks) {
     final now = DateTime.now();
 
-    final days = List.generate(
-      7,
-      (i) => DateTime(now.year, now.month, now.day + i),
-    );
+    final sorted = [...tasks]
+      ..sort((a, b) => b.priorityScore.compareTo(a.priorityScore));
 
-    final plan = <String, List<PlannedTask>>{};
-    final usedHours = <String, double>{};
-    const double dailyCapacity = 4.0;
+    final List<PlannedTask> schedule = [];
 
-    for (final day in days) {
-      final label = "${day.month}/${day.day}";
-      plan[label] = [];
-      usedHours[label] = 0;
-    }
+    DateTime cursor = DateTime(now.year, now.month, now.day, 9); // 9AM start
 
-    final activeTasks = tasks
-        .where((t) => !t.isCompleted && !t.isOverdue)
-        .toList();
+    for (final task in sorted) {
+      double remaining = task.estimatedHours;
 
-    activeTasks.sort((a, b) {
-      final deadlineCompare = a.deadline.compareTo(b.deadline);
-      if (deadlineCompare != 0) return deadlineCompare;
-      return b.priorityScore.compareTo(a.priorityScore);
-    });
+      while (remaining > 0) {
+        final chunk = remaining > 2 ? 2 : remaining; // max 2hr blocks
 
-    for (final task in activeTasks) {
-      double remainingHours = task.estimatedHours;
+        schedule.add(
+          PlannedTask(
+            taskId: task.id!,
+            hoursForDay: chunk,
+            plannedDate: cursor,
+          ),
+        );
 
-      final slots = days.length;
+        remaining -= chunk;
 
-      final hoursPerDay = remainingHours / slots;
+        cursor = cursor.add(const Duration(hours: 2));
 
-      for (int i = 0; i < slots; i++) {
-        final day = days[i];
-        final label = "${day.month}/${day.day}";
-
-        final current = usedHours[label] ?? 0;
-
-        if (remainingHours <= 0) break;
-
-        if (current + hoursPerDay <= dailyCapacity) {
-          plan[label]!.add(
-            PlannedTask(
-              task: task,
-              hoursForDay: hoursPerDay,
-              plannedDate: day,
-            ),
-          );
-
-          usedHours[label] = current + hoursPerDay;
-          remainingHours -= hoursPerDay;
+        // move to next day after 8pm
+        if (cursor.hour >= 20) {
+          cursor = DateTime(cursor.year, cursor.month, cursor.day + 1, 9);
         }
       }
     }
 
-    return plan;
+    return schedule;
   }
 
   List<Task> filterTasksByDate(List<Task> tasks, DateTime date){

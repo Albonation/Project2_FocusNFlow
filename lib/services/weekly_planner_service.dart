@@ -12,10 +12,13 @@ class WeeklyPlannerService {
     );
 
     final plan = <String, List<PlannedTask>>{};
+    final usedHours = <String, double>{};
+    const double dailyCapacity = 4.0;
 
     for (final day in days) {
       final label = "${day.month}/${day.day}";
       plan[label] = [];
+      usedHours[label] = 0;
     }
 
     final activeTasks = tasks
@@ -31,20 +34,30 @@ class WeeklyPlannerService {
     for (final task in activeTasks) {
       double remainingHours = task.estimatedHours;
 
-      final daysUntilDeadline = task.deadline.difference(now).inDays.clamp(1, 7);
+      final slots = days.length;
 
-      final hoursPerDay = remainingHours / daysUntilDeadline;
+      final hoursPerDay = remainingHours / slots;
 
-      for (int i = 0; i < daysUntilDeadline && i < 7; i++) {
+      for (int i = 0; i < slots; i++) {
         final day = days[i];
         final label = "${day.month}/${day.day}";
 
-        plan[label]!.add(
-          PlannedTask(
-            task: task,
-            hoursForDay: hoursPerDay,
-          ),
-        );
+        final current = usedHours[label] ?? 0;
+
+        if (remainingHours <= 0) break;
+
+        if (current + hoursPerDay <= dailyCapacity) {
+          plan[label]!.add(
+            PlannedTask(
+              task: task,
+              hoursForDay: hoursPerDay,
+              plannedDate: day,
+            ),
+          );
+
+          usedHours[label] = current + hoursPerDay;
+          remainingHours -= hoursPerDay;
+        }
       }
     }
 

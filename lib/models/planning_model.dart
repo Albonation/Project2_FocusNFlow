@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:focus_n_flow/models/task_model.dart';
 
-class PlannedTask{
+class PlannedTask {
   final Task task;
   final double hoursForDay;
   final DateTime plannedDate;
@@ -12,11 +12,11 @@ class PlannedTask{
     required this.plannedDate,
   });
 
-  Map<String, dynamic> toMap(){
+  Map<String, dynamic> toMap() {
     return {
       'task_id': task.id,
       'hours_for_day': hoursForDay,
-      'date': Timestamp.fromDate(plannedDate),
+      'planned_date': Timestamp.fromDate(plannedDate),
     };
   }
 

@@ -62,13 +62,19 @@ class WeeklyPlannerRepository {
     });
   }
 
-  //Move tasks in weekly view
-  Future<void> moveTask(
+  Future<void> movePlannedTask(
     String userId,
     String weekId,
     String taskId,
     DateTime newDate,
   ) async {
+
+    final normalized = DateTime(
+      newDate.year,
+      newDate.month,
+      newDate.day,
+    );
+
     final ref = FirebaseFirestore.instance
         .collection('users')
         .doc(userId)
@@ -76,11 +82,12 @@ class WeeklyPlannerRepository {
         .doc(weekId)
         .collection('tasks');
 
-    final snapshot = await ref.where('task_id', isEqualTo: taskId).get();
+    final snapshot =
+        await ref.where('task_id', isEqualTo: taskId).get();
 
     for (final doc in snapshot.docs) {
       await doc.reference.update({
-        'planned_date': Timestamp.fromDate(newDate),
+        'planned_date': Timestamp.fromDate(normalized),
       });
     }
   }

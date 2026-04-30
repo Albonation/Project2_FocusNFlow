@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:intl/intl.dart';
 import 'package:focus_n_flow/models/planning_model.dart';
+import 'package:focus_n_flow/repositories/weekly_planner_repository.dart';
 
 class CalendarPlannerView extends StatefulWidget {
+  final String userId;
   final Stream<List<PlannedTask>> planStream;
+  final WeeklyPlannerRepository repository;
 
   const CalendarPlannerView({
     super.key,
+    required this.userId,
     required this.planStream,
+    required this.repository,
   });
 
   @override
@@ -16,16 +20,17 @@ class CalendarPlannerView extends StatefulWidget {
       _CalendarPlannerViewState();
 }
 
-class _CalendarPlannerViewState extends State<CalendarPlannerView> {
+class _CalendarPlannerViewState
+    extends State<CalendarPlannerView> {
+
   DateTime focusedDay = DateTime.now();
   DateTime selectedDay = DateTime.now();
 
   List<PlannedTask> _tasks = [];
 
-  List<PlannedTask> _getTasksForDay(DateTime day) {
-    return _tasks.where((t) {
-      return isSameDay(t.plannedDate, day);
-    }).toList();
+  List<PlannedTask> _tasksForDay(DateTime day) {
+    return _tasks.where((t) =>
+        isSameDay(t.plannedDate, day)).toList();
   }
 
   @override
@@ -41,6 +46,7 @@ class _CalendarPlannerViewState extends State<CalendarPlannerView> {
         return Column(
           children: [
 
+            //CALENDAR GRID (DROP TARGET)
             TableCalendar(
               firstDay: DateTime.utc(2020),
               lastDay: DateTime.utc(2030),
@@ -48,7 +54,7 @@ class _CalendarPlannerViewState extends State<CalendarPlannerView> {
               selectedDayPredicate: (day) =>
                   isSameDay(selectedDay, day),
 
-              eventLoader: _getTasksForDay,
+              eventLoader: _tasksForDay,
 
               onDaySelected: (selected, focused) {
                 setState(() {
@@ -56,46 +62,65 @@ class _CalendarPlannerViewState extends State<CalendarPlannerView> {
                   focusedDay = focused;
                 });
               },
+
+              calendarBuilders: CalendarBuilders(
+                defaultBuilder: (context, day, focusedDay) {
+                  return DragTarget<PlannedTask>(
+                    onAcceptWithDetails: (task) async {
+                      await widget.repository.movePlannedTask(
+                        userId: widget.userId,
+                        taskId: task.taskId,
+                        newDate: day,
+                      );
+                    },
+
+                    builder: (context, candidate, rejected) {
+                      return Container(
+                        margin: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: candidate.isNotEmpty
+                              ? Colors.blue.shade100
+                              : null,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text('${day.day}'),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
 
             const SizedBox(height: 10),
 
+            //TASK LIST (DRAG SOURCE)
             Expanded(
               child: ListView(
-                children: _getTasksForDay(selectedDay).map((planned) {
+                children: _tasksForDay(selectedDay).map((task) {
 
-                  final task = planned.task;
+                  return LongPressDraggable<PlannedTask>(
+                    data: task,
 
-                  return ListTile(
-                    title: Text(task?.title ?? "Task"),
-
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-
-                        Text(
-                          "Study: ${planned.hoursForDay.toStringAsFixed(1)} hrs",
+                    feedback: Material(
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        color: Colors.blue,
+                        child: Text(
+                          task.task?.title ?? "Task",
+                          style: const TextStyle(
+                            color: Colors.white,
+                          ),
                         ),
-
-                        const SizedBox(height: 4),
-
-                        Text(
-                          "Scheduled: ${DateFormat('MMM dd').format(planned.plannedDate)}",
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      ],
+                      ),
                     ),
 
-                    trailing: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          task?.priorityScore.toStringAsFixed(1) ?? "-",
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        const Text("Priority", style: TextStyle(fontSize: 10)),
-                      ],
+                    childWhenDragging: Opacity(
+                      opacity: 0.3,
+                      child: _taskTile(task),
                     ),
+
+                    child: _taskTile(task),
                   );
                 }).toList(),
               ),
@@ -103,6 +128,29 @@ class _CalendarPlannerViewState extends State<CalendarPlannerView> {
           ],
         );
       },
+    );
+  }
+
+  Widget _taskTile(PlannedTask task) {
+    final t = task.task;
+
+    return ListTile(
+      title: Text(t?.title ?? "Task"),
+
+      subtitle: Text(
+        "Study: ${task.hoursForDay.toStringAsFixed(1)} hrs",
+      ),
+
+      trailing: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            t?.priorityScore.toStringAsFixed(1) ?? "-",
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          const Text("Priority", style: TextStyle(fontSize: 10)),
+        ],
+      ),
     );
   }
 }

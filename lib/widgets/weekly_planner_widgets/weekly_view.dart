@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:focus_n_flow/models/planning_model.dart';
 import 'package:focus_n_flow/repositories/weekly_planner_repository.dart';
 
-class WeeklyPlannerView extends StatelessWidget {
+class WeeklyPlannerView extends StatefulWidget {
   final String userId;
   final String weekId;
   final WeeklyPlannerRepository repository;
@@ -17,23 +17,32 @@ class WeeklyPlannerView extends StatelessWidget {
     required this.planStream,
   });
 
+  @override
+  State<WeeklyPlannerView> createState() => _WeeklyPlannerViewState();
+}
+
+class _WeeklyPlannerViewState extends State<WeeklyPlannerView> {
+  List<PlannedTask> _localTasks = [];
+
   DateTime _normalize(DateTime d) =>
       DateTime(d.year, d.month, d.day);
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<PlannedTask>>(
-      stream: planStream,
+      stream: widget.planStream,
       builder: (context, snapshot) {
-        if (!snapshot.hasData) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final tasks = snapshot.data!;
+        if (snapshot.hasData) {
+          _localTasks = snapshot.data!;
+        }
 
         final grouped = <DateTime, List<PlannedTask>>{};
 
-        for (final t in tasks) {
+        for (final t in _localTasks) {
           final day = _normalize(t.plannedDate);
           grouped.putIfAbsent(day, () => []);
           grouped[day]!.add(t);
@@ -41,18 +50,42 @@ class WeeklyPlannerView extends StatelessWidget {
 
         final days = grouped.keys.toList()..sort();
 
+        if (days.isEmpty) {
+          return const Center(
+            child: Text("No planned tasks yet."),
+          );
+        }
+
         return ListView(
           padding: const EdgeInsets.all(16),
           children: days.map((day) {
-
-            final dayTasks = grouped[day]!;
+            final tasks = grouped[day]!;
 
             return DragTarget<PlannedTask>(
-              onAccept: (draggedTask) async {
+              onAcceptWithDetails: (details) async {
+                final draggedTask = details.data;
 
-                await repository.moveTask(
-                  userId,
-                  weekId,
+                // Prevent accidental rebuild conflicts
+                final updated = _localTasks.map((t) {
+                  if (t.taskId == draggedTask.taskId) {
+                    return PlannedTask(
+                      taskId: t.taskId,
+                      task: t.task,
+                      hoursForDay: t.hoursForDay,
+                      plannedDate: day,
+                    );
+                  }
+                  return t;
+                }).toList();
+
+                setState(() {
+                  _localTasks = updated;
+                });
+
+                // persist change
+                await widget.repository.movePlannedTask(
+                  widget.userId,
+                  widget.weekId,
                   draggedTask.taskId,
                   day,
                 );
@@ -69,7 +102,6 @@ class WeeklyPlannerView extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-
                         Text(
                           DateFormat('EEE, MMM d').format(day),
                           style: Theme.of(context).textTheme.titleLarge,
@@ -77,32 +109,35 @@ class WeeklyPlannerView extends StatelessWidget {
 
                         const SizedBox(height: 10),
 
-                        ...dayTasks.map((task) {
+                        ...tasks.map((task) {
+                          final dragged = task;
 
                           return LongPressDraggable<PlannedTask>(
-                            data: task,
+                            data: dragged,
+
                             feedback: Material(
+                              color: Colors.transparent,
                               child: Container(
                                 padding: const EdgeInsets.all(8),
-                                color: Colors.blue,
+                                decoration: BoxDecoration(
+                                  color: Colors.blue,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                                 child: Text(
-                                  task.task?.title ?? "Task",
-                                  style: const TextStyle(color: Colors.white),
+                                  dragged.task?.title ?? "Task",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
                             ),
 
-                            child: ListTile(
-                              title: Text(task.task?.title ?? "Task"),
-
-                              subtitle: Text(
-                                "Study: ${task.hoursForDay.toStringAsFixed(1)} hrs",
-                              ),
-
-                              trailing: Text(
-                                task.task?.priorityScore.toStringAsFixed(1) ?? "-",
-                              ),
+                            childWhenDragging: Opacity(
+                              opacity: 0.3,
+                              child: _buildTaskTile(dragged),
                             ),
+
+                            child: _buildTaskTile(dragged),
                           );
                         }),
                       ],
@@ -114,6 +149,20 @@ class WeeklyPlannerView extends StatelessWidget {
           }).toList(),
         );
       },
+    );
+  }
+
+  Widget _buildTaskTile(PlannedTask task) {
+    return ListTile(
+      title: Text(task.task?.title ?? "Task"),
+
+      subtitle: Text(
+        "Study: ${task.hoursForDay.toStringAsFixed(1)} hrs",
+      ),
+
+      trailing: Text(
+        task.task?.priorityScore.toStringAsFixed(1) ?? "-",
+      ),
     );
   }
 }

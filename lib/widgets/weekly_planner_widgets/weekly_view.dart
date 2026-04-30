@@ -35,36 +35,38 @@ class WeeklyPlannerView extends StatelessWidget {
                 const SizedBox(height: 10),
 
                 ...entry.value.map((planned) {
-
                   final task = planned.task;
 
                   return ListTile(
                     title: Text(task.title),
+
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           "Due: ${DateFormat('MMM dd, yyyy').format(task.deadline)}",
                         ),
+
                         const SizedBox(height: 4),
-                        if(task.description.isNotEmpty)
+
+                        if (task.description.isNotEmpty) ...[
                           Text(
                             task.description,
                             style: const TextStyle(fontSize: 12),
                           ),
-
                           const SizedBox(height: 4),
+                        ],
 
-                          Text(
-                            "Study: ${planned.hoursForDay.toStringAsFixed(1)} hrs",
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
+                        Text(
+                          "Study: ${planned.hoursForDay.toStringAsFixed(1)} hrs",
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
                           ),
+                        ),
                       ],
                     ),
-                    
+
                     trailing: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [

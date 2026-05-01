@@ -1,122 +1,81 @@
 import 'package:flutter/material.dart';
+import 'package:focus_n_flow/models/time_slot_model.dart';
 import 'package:focus_n_flow/services/planner_service.dart';
 
 class CalendarView extends StatelessWidget {
   final PlannerController controller;
 
-  const CalendarView({
-    super.key,
-    required this.controller,
-  });
+  const CalendarView({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {
     final plan = controller.currentPlan;
 
     if (plan == null) {
-      return const Center(
-        child: Text("No plan selected"),
-      );
+      return const Center(child: Text("No plan selected"));
     }
 
-    final days = plan.days.keys.toList()..sort();
+    final days = plan.slots.keys.toList()..sort();
 
-    return Column(
-      children: [
-        // TOP BAR
-        Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
+    return Row(
+      children: days.map((day) {
+        final slots = plan.slots[day] ?? [];
+
+        return Expanded(
+          child: Column(
             children: [
-              Text(
-                plan.name,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
+              Text("${day.month}/${day.day}"),
+              const Divider(),
 
-              const Spacer(),
-
-              ElevatedButton(
-                onPressed: () {
-                  controller.savePlanToFirestore();
-                },
-                child: const Text("Save Plan"),
+              Expanded(
+                child: Stack(
+                  children: [
+                    // background hour grid (optional later)
+                    
+                    ...slots.map((slot) {
+                      return Positioned(
+                        top: _minutesFromStart(slot.start).toDouble(),
+                        left: 8,
+                        right: 8,
+                        child: Draggable<TimeSlot>(
+                          data: slot,
+                          feedback: Material(
+                            child: _SlotCard(slot: slot),
+                          ),
+                          child: _SlotCard(slot: slot),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
               ),
             ],
           ),
-        ),
-
-        const Divider(),
-
-        // CALENDAR BODY
-        Expanded(
-          child: ListView.builder(
-            itemCount: days.length,
-            itemBuilder: (context, index) {
-              final day = days[index];
-              final tasks = plan.days[day] ?? [];
-
-              return Card(
-                margin: const EdgeInsets.all(8),
-                child: ExpansionTile(
-                  title: Text(
-                    "${day.year}-${day.month}-${day.day}",
-                  ),
-                  children: tasks.map((task) {
-                    return ListTile(
-                      title: Text(task.task.title),
-                      subtitle: Text("${task.hours}h allocated"),
-                      trailing: const Icon(Icons.drag_handle),
-
-                      onTap: () {
-                        _showTaskDetails(context, controller, task);
-                      },
-                    );
-                  }).toList(),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
+        );
+      }).toList(),
     );
   }
 
-  // -------------------------
-  // TASK DETAIL POPUP
-  // -------------------------
-  void _showTaskDetails(
-    BuildContext context,
-    PlannerController controller,
-    task,
-  ) {
-    showDialog(
-      context: context,
-      builder: (_) {
-        return AlertDialog(
-          title: Text(task.task.name),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text("Task ID: ${task.taskId}"),
-              Text("Hours: ${task.hours}"),
-              Text("Date: ${task.date}"),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                controller.removeAllocation(task);
-                Navigator.pop(context);
-              },
-              child: const Text("Delete"),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Close"),
-            ),
-          ],
-        );
-      },
+  double _minutesFromStart(DateTime time) {
+    return (time.hour * 60 + time.minute).toDouble();
+  }
+}
+class _SlotCard extends StatelessWidget {
+  final TimeSlot slot;
+
+  const _SlotCard({required this.slot});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 60,
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade200,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(slot.task.task.title),
     );
   }
 }

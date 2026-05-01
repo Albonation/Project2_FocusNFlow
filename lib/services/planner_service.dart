@@ -1,122 +1,106 @@
-import 'package:flutter/material.dart';
-import 'package:focus_n_flow/models/planning_model.dart';
+import 'package:flutter/foundation.dart';
 import 'package:focus_n_flow/models/planned_task_model.dart';
+import 'package:focus_n_flow/models/planning_model.dart';
 import 'package:focus_n_flow/models/task_model.dart';
+import 'package:focus_n_flow/models/time_slot_model.dart';
 import 'package:focus_n_flow/services/planner_engine.dart';
 
 class PlannerController extends ChangeNotifier {
   final PlannerEngine engine;
 
-  PlannerController({
-    required this.engine,
-  });
+  PlannerController({required this.engine});
 
   List<Task> tasks = [];
-
   Plan? currentPlan;
 
-  // ---------------------------
-  // CREATE EMPTY PLAN
-  // ---------------------------
   void createEmptyPlan() {
     currentPlan = Plan(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       name: "New Plan",
       createdAt: DateTime.now(),
-      days: {},
+      slots: {},
     );
 
     notifyListeners();
   }
 
-  // ---------------------------
-  // AI GENERATION
-  // ---------------------------
   void generateAIPlan() {
     currentPlan = engine.autoGenerate(tasks);
     notifyListeners();
   }
 
-  // ---------------------------
-  // MANUAL ALLOCATION
-  // ---------------------------
   void addManualAllocation(Task task, DateTime day, double hours) {
-    if (currentPlan == null) {
-      createEmptyPlan();
-    }
+    if (currentPlan == null) createEmptyPlan();
 
-    final updatedDays = Map<DateTime, List<PlannedTask>>.from(
-      currentPlan!.days,
+    final updated = Map<DateTime, List<TimeSlot>>.from(
+      currentPlan!.slots,
     );
 
-    updatedDays[day] ??= [];
+    updated[day] ??= [];
 
-    updatedDays[day]!.add(
-      PlannedTask(
-        taskId: task.id!,
-        task: task,
-        date: day,
-        hours: hours,
+    final start = DateTime(day.year, day.month, day.day, 9); // default start
+
+    updated[day]!.add(
+      TimeSlot(
+        start: start,
+        end: start.add(Duration(hours: hours.toInt())),
+        task: PlannedTask(
+          taskId: task.id!,
+          task: task,
+          date: day,
+          hours: hours,
+        ),
       ),
     );
 
-    currentPlan = currentPlan!.copyWith(days: updatedDays);
+    currentPlan = currentPlan!.copyWith(slots: updated);
 
     notifyListeners();
   }
 
-  // ---------------------------
-  // REMOVE ALLOCATION
-  // ---------------------------
-  void removeAllocation(PlannedTask task) {
+  void removeAllocation(TimeSlot slot) {
     if (currentPlan == null) return;
 
-    final updatedDays = Map<DateTime, List<PlannedTask>>.from(
-      currentPlan!.days,
+    final updated = Map<DateTime, List<TimeSlot>>.from(
+      currentPlan!.slots,
     );
 
-    updatedDays.forEach((day, list) {
-      list.removeWhere((t) => t.taskId == task.taskId);
+    updated.forEach((_, list) {
+      list.removeWhere((s) => s.task.taskId == slot.task.taskId);
     });
 
-    currentPlan = currentPlan!.copyWith(days: updatedDays);
+    currentPlan = currentPlan!.copyWith(slots: updated);
 
     notifyListeners();
   }
 
-  // ---------------------------
-  // MOVE TASK (drag/drop)
-  // ---------------------------
-  void moveTask(PlannedTask task, DateTime newDay) {
+  void moveSlot(TimeSlot slot, DateTime newDay, DateTime newStart) {
     if (currentPlan == null) return;
 
-    final updatedDays = Map<DateTime, List<PlannedTask>>.from(
-      currentPlan!.days,
+    final updated = Map<DateTime, List<TimeSlot>>.from(
+      currentPlan!.slots,
     );
 
-    // remove from old day
-    updatedDays.forEach((day, list) {
-      list.removeWhere((t) => t.taskId == task.taskId);
+    updated.forEach((_, list) {
+      list.removeWhere((s) => s.task.taskId == slot.task.taskId);
     });
 
-    // add to new day
-    updatedDays[newDay] ??= [];
+    updated[newDay] ??= [];
 
-    updatedDays[newDay]!.add(
-      task.copyWith(date: newDay),
+    updated[newDay]!.add(
+      TimeSlot(
+        start: newStart,
+        end: newStart.add(slot.end.difference(slot.start)),
+        task: slot.task,
+      ),
     );
 
-    currentPlan = currentPlan!.copyWith(days: updatedDays);
+    currentPlan = currentPlan!.copyWith(slots: updated);
 
     notifyListeners();
   }
 
-  // ---------------------------
-  // SAVE (placeholder)
-  // ---------------------------
   Future<void> savePlanToFirestore() async {
     if (currentPlan == null) return;
-
-    // later: repository.save(currentPlan)
   }
 }

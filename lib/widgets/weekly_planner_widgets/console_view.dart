@@ -16,22 +16,28 @@ class PlannerConsole extends StatefulWidget {
 class _PlannerConsoleState extends State<PlannerConsole> {
   bool _loading = false;
 
-  Future<void> _generateAIPlan() async {
+  Future<void> _generateAI() async {
     setState(() => _loading = true);
 
     widget.controller.generateAIPlan();
 
     setState(() => _loading = false);
-
-    // optional: switch to calendar view handled outside this widget
   }
 
-  void _createManualPlan() {
+  void _createManual() {
     widget.controller.createEmptyPlan();
+  }
+
+  void _clearPlan() {
+    widget.controller.currentPlan = null;
+    widget.controller.notifyListeners();
   }
 
   @override
   Widget build(BuildContext context) {
+    final plan = widget.controller.currentPlan;
+    final taskCount = widget.controller.tasks.length;
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -39,16 +45,38 @@ class _PlannerConsoleState extends State<PlannerConsole> {
         children: [
           const Text(
             "Planner Console",
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
 
           const SizedBox(height: 20),
 
-          // AI GENERATE BUTTON
+          // -------------------
+          // STATUS PANEL
+          // -------------------
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Tasks Loaded: $taskCount"),
+                Text("Plan Active: ${plan != null ? 'Yes' : 'No'}"),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // -------------------
+          // ACTIONS
+          // -------------------
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: _loading ? null : _generateAIPlan,
+              onPressed: _loading ? null : _generateAI,
               child: _loading
                   ? const CircularProgressIndicator()
                   : const Text("Generate AI Plan"),
@@ -57,14 +85,40 @@ class _PlannerConsoleState extends State<PlannerConsole> {
 
           const SizedBox(height: 12),
 
-          // MANUAL MODE
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
-              onPressed: _createManualPlan,
-              child: const Text("Start Manual Plan"),
+              onPressed: _createManual,
+              child: const Text("Create Manual Plan"),
             ),
           ),
+
+          const SizedBox(height: 12),
+
+          SizedBox(
+            width: double.infinity,
+            child: TextButton(
+              onPressed: _clearPlan,
+              child: const Text("Clear Plan"),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // -------------------
+          // OPTIONAL PREVIEW
+          // -------------------
+          if (plan != null)
+            Expanded(
+              child: ListView(
+                children: plan.days.entries.map((entry) {
+                  return ListTile(
+                    title: Text(entry.key.toString()),
+                    subtitle: Text("${entry.value.length} tasks"),
+                  );
+                }).toList(),
+              ),
+            ),
         ],
       ),
     );

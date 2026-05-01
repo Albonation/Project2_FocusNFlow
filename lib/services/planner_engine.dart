@@ -1,9 +1,11 @@
 import 'package:focus_n_flow/models/task_model.dart';
+import 'package:focus_n_flow/repositories/task_repository.dart';
 import 'package:focus_n_flow/models/planning_model.dart';
 import 'package:focus_n_flow/repositories/weekly_planner_repository.dart';
 
 class PlannerEngine {
   final WeeklyPlannerRepository repository;
+  final TaskRepository repo;
   final String userId;
   final String weekId;
   static const double maxHoursPerDay = 12.0;
@@ -11,6 +13,7 @@ class PlannerEngine {
 
   PlannerEngine({
     required this.repository,
+    required this.repo,
     required this.userId,
     required this.weekId,
   }) {
@@ -54,12 +57,15 @@ class PlannerEngine {
       return bScore.compareTo(aScore);
     });
 
-    for (final task in active) {
-      final distribution = distribute(task, weekDays);
+    for (final task in active){
+      final distributed = distribute(task, weekDays);
 
-      applyCapacity(map, distribution);
+      if (distributed.isEmpty) continue;
+
+      for (final part in distributed){
+        _placeWithPressure(map, part);
+      }
     }
-
     return map;
   }
 
@@ -282,8 +288,9 @@ class PlannerEngine {
     PlannedTask newTask,
   ) {
     DateTime day = _normalize(newTask.plannedDate);
-
+    int safety = 0;
     while (true) {
+      if (++safety > 14) return;
       final current = map[day] ?? [];
 
       final used = current.fold<double>(
@@ -320,8 +327,13 @@ class PlannerEngine {
           hoursForDay: remaining,
           plannedDate: day.add(const Duration(days: 1)),
         );
-      }
 
+        if(remaining <= 0.01) return;
+      }
+      
+      if(current.any((t) => t.taskId == newTask.taskId)){
+        return;
+      }
       // No space -> apply pressure
       if (current.isNotEmpty) {
         final weakest = _findLowestPriority(current);
@@ -348,8 +360,7 @@ class PlannerEngine {
       //Move forward if cannot replace
       day = _normalize(day.add(const Duration(days: 1)));
 
-      //safety stop
-      if (!map.containsKey(day)) return;
+      if(day.isAfter(newTask.task!.deadline)) return;
     }
   }
 
@@ -361,6 +372,16 @@ class PlannerEngine {
     final normalized = _normalize(newDate);
 
     await persistMove(taskId, normalized);
+
+    repo.getTasksForUser(userId).listen((tasks) async {
+      final newPlan = buildPlan(tasks);
+
+      await repository.savePlan(
+        userId,
+        weekId,
+        newPlan.values.expand((e) => e).toList(),
+      );
+    });
   }
 
   // HELPERS

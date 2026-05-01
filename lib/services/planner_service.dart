@@ -37,7 +37,11 @@ class PlannerController extends ChangeNotifier {
     // TASK STREAM
     _taskSub = taskStream.listen((data) async {
       _tasks = data;
-      await refreshPlan();
+
+      if(_plan.isEmpty){
+        await refreshPlan();
+      }
+      notifyListeners();
     });
 
     // PLAN STREAM (source of truth from DB)
@@ -92,37 +96,37 @@ class PlannerController extends ChangeNotifier {
   }
 
   // ---------- DRAG & DROP ----------
-  Future<void> moveTask(String taskId, DateTime newDate) async {
+  Future<void> moveTask(PlannedTask moved, DateTime newDate) async {
     final normalized = DateTime(
       newDate.year,
       newDate.month,
       newDate.day,
     );
 
-    
-    _plan.removeWhere((p) => p.taskId == taskId);
+    final existing = _plan.where((p) => p.taskId == taskId).toList();
+    if (existing.isEmpty) return;
 
-  
-    final task = _tasks.firstWhere((t) => t.id == taskId);
+    final moved = existing.first;
 
- 
-    final anchor = PlannedTask(
-      taskId: taskId,
-      task: task,
-      hoursForDay: task.estimatedHours,
-      plannedDate: normalized,
-      isLocked: true,
-    );
-
-    _plan.add(anchor);
+    _plan
+      ..remove(moved)
+      ..add(
+        PlannedTask(
+          taskId: moved.taskId,
+          task: moved.task,
+          hoursForDay: moved.hoursForDay,
+          plannedDate: normalized,
+          isLocked: true,
+        ),
+      );
 
     notifyListeners();
 
-    
+    // persist ONLY
+    _isSaving = true;
     await repository.savePlan(userId, weekId, _plan);
-
+    _isSaving = false;
     
-    await refreshPlan();
   }
 
   // ---------- WEEK GROUPING ----------

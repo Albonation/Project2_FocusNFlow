@@ -14,24 +14,20 @@ class PlannerConsole extends StatefulWidget {
 }
 
 class _PlannerConsoleState extends State<PlannerConsole> {
-  final TextEditingController _input = TextEditingController();
   bool _loading = false;
 
-  Future<void> _generate() async {
+  Future<void> _generateAIPlan() async {
     setState(() => _loading = true);
 
-    final aiPlan = await widget.controller.engine.generateFromPrompt(
-      _input.text,
-      widget.controller.tasks,
-    );
-
-    widget.controller.setCurrentPlan(aiPlan);
+    widget.controller.generateAIPlan();
 
     setState(() => _loading = false);
 
-    if (mounted) {
-      setState(() => false);
-    }
+    // optional: switch to calendar view handled outside this widget
+  }
+
+  void _createManualPlan() {
+    widget.controller.createEmptyPlan();
   }
 
   @override
@@ -46,39 +42,28 @@ class _PlannerConsoleState extends State<PlannerConsole> {
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 20),
 
-          TextField(
-            controller: _input,
-            maxLines: 4,
-            decoration: const InputDecoration(
-              hintText: "Type a schedule request...\nExample: "
-                  "Build me a study plan for finals week",
-              border: OutlineInputBorder(),
+          // AI GENERATE BUTTON
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _loading ? null : _generateAIPlan,
+              child: _loading
+                  ? const CircularProgressIndicator()
+                  : const Text("Generate AI Plan"),
             ),
           ),
 
           const SizedBox(height: 12),
 
-          Row(
-            children: [
-              ElevatedButton(
-                onPressed: _loading ? null : _generate,
-                child: _loading
-                    ? const CircularProgressIndicator()
-                    : const Text("Generate AI Plan"),
-              ),
-
-              const SizedBox(width: 12),
-
-              OutlinedButton(
-                onPressed: () {
-                  widget.controller.createEmptyPlan();
-                  setState(() {});
-                },
-                child: const Text("Start Manual Plan"),
-              ),
-            ],
+          // MANUAL MODE
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: _createManualPlan,
+              child: const Text("Start Manual Plan"),
+            ),
           ),
         ],
       ),

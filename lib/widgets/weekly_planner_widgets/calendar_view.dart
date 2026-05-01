@@ -28,26 +28,16 @@ class CalendarView extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
-              DropdownButton<String>(
-                value: plan.id,
-                items: controller.savedPlans.map((p) {
-                  return DropdownMenuItem(
-                    value: p.id,
-                    child: Text(p.name),
-                  );
-                }).toList(),
-                onChanged: (id) {
-                  if (id != null) {
-                    controller.loadPlan(id);
-                  }
-                },
+              Text(
+                plan.name,
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
 
               const Spacer(),
 
               ElevatedButton(
                 onPressed: () {
-                  controller.savePlan(plan.name);
+                  controller.savePlanToFirestore();
                 },
                 child: const Text("Save Plan"),
               ),
@@ -73,11 +63,12 @@ class CalendarView extends StatelessWidget {
                   ),
                   children: tasks.map((task) {
                     return ListTile(
-                      title: Text(task.taskId),
-                      subtitle: Text("${task.hours}h"),
+                      title: Text(task.task.title),
+                      subtitle: Text("${task.hours}h allocated"),
                       trailing: const Icon(Icons.drag_handle),
+
                       onTap: () {
-                        // future drag/edit
+                        _showTaskDetails(context, controller, task);
                       },
                     );
                   }).toList(),
@@ -87,6 +78,45 @@ class CalendarView extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  // -------------------------
+  // TASK DETAIL POPUP
+  // -------------------------
+  void _showTaskDetails(
+    BuildContext context,
+    PlannerController controller,
+    task,
+  ) {
+    showDialog(
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          title: Text(task.task.name),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text("Task ID: ${task.taskId}"),
+              Text("Hours: ${task.hours}"),
+              Text("Date: ${task.date}"),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                controller.removeAllocation(task);
+                Navigator.pop(context);
+              },
+              child: const Text("Delete"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Close"),
+            ),
+          ],
+        );
+      },
     );
   }
 }

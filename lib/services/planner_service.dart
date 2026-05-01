@@ -103,11 +103,6 @@ class PlannerController extends ChangeNotifier {
       newDate.day,
     );
 
-    final existing = _plan.where((p) => p.taskId == taskId).toList();
-    if (existing.isEmpty) return;
-
-    final moved = existing.first;
-
     _plan
       ..remove(moved)
       ..add(

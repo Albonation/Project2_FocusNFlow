@@ -43,7 +43,7 @@ class _WeeklyPlannerViewState extends State<WeeklyPlannerView> {
                 final task = details.data;
 
                 await widget.controller.moveTask(
-                  task.taskId,
+                  task,
                   day,
                 );
               },

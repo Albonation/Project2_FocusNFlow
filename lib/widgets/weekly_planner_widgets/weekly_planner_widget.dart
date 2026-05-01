@@ -34,6 +34,7 @@ class _WeeklyPlannerWidgetState extends State<WeeklyPlannerWidget> {
 
     final engine = PlannerEngine(
       repository: widget.plannerRepository,
+      repo: widget.repository,
       userId: widget.userId,
       weekId: _currentWeekId(),
     );

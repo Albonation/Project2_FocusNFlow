@@ -54,7 +54,7 @@ class _CalendarPlannerViewState extends State<CalendarPlannerView> {
                   final task = details.data;
                   
                   await widget.controller.moveTask(
-                    task.taskId,
+                    task,
                     day,
                   );
                 },

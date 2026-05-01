@@ -67,7 +67,7 @@ class PlannerEngine {
       }
     }
     _mergeSameTasksPerDay(map);
-    
+
     return map;
   }
 
@@ -112,6 +112,7 @@ class PlannerEngine {
 
       _rebalanceSingleTaskWithLocks(map, task, weekDays);
     }
+    _mergeSameTasksPerDay(map);
 
     return map.values.expand((e) => e).toList();
   }
@@ -307,15 +308,33 @@ class PlannerEngine {
         final allocated =
             newTask.hoursForDay > free ? free : newTask.hoursForDay;
 
-        map[day] = [
-          ...current,
-          PlannedTask(
-            taskId: newTask.taskId,
-            task: newTask.task,
-            hoursForDay: allocated,
+        final existingIndex = current.indexWhere(
+          (t) => t.taskId == newTask.taskId,
+        );
+
+        if (existingIndex != -1) {
+          final existing = current[existingIndex];
+
+          current[existingIndex] = PlannedTask(
+            taskId: existing.taskId,
+            task: existing.task,
+            hoursForDay: existing.hoursForDay + allocated,
             plannedDate: day,
-          ),
-        ];
+            isLocked: existing.isLocked,
+          );
+
+          map[day] = [...current];
+        } else {
+          map[day] = [
+            ...current,
+            PlannedTask(
+              taskId: newTask.taskId,
+              task: newTask.task,
+              hoursForDay: allocated,
+              plannedDate: day,
+            ),
+          ];
+        }
 
         final remaining = newTask.hoursForDay - allocated;
 
@@ -331,10 +350,6 @@ class PlannerEngine {
         );
 
         if(remaining <= 0.01) return;
-      }
-      
-      if(current.any((t) => t.taskId == newTask.taskId)){
-        return;
       }
       // No space -> apply pressure
       if (current.isNotEmpty) {

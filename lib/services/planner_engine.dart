@@ -80,6 +80,28 @@ class PlannerEngine {
     required List<Taask> tasks,
   }) async {
     final updatedPlan = <DateTime, List<PlannedTask>>{};
+
+    //rebuild map from plan
+    for (final p in currentPlan) {
+      final day = _normalize(p.plannedDate);
+      updatedPlan.putIfAbsent(day, () => []).add(p);
+    }
+
+    //detect changes
+    final taskIds = tasks.map((t) => t.id).toSet();
+    
+
+    updatedPlan.forEach((day, list) {
+      list.removeWhere((p) => !taskIds.contains(p.taskId));
+    });
+
+    for (final task in tasks) {
+      if (task.id == null) continue;
+
+      _rebalanceSingleTask(updatedPlan, task);
+    }
+
+    return updatedPlan.values.expand((e) => e).toList();
   }
 
   // DISTRIBUTION STRATEGY

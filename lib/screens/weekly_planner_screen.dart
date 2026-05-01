@@ -13,7 +13,6 @@ class WeeklyPlannerScreen extends StatefulWidget {
 
 class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
   final TaskRepository _repository = TaskRepository();
-  final WeeklyPlannerRepository _repo2 = WeeklyPlannerRepository();
 
   @override
   Widget build(BuildContext context) {

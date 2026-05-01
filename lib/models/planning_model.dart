@@ -1,15 +1,29 @@
-import 'package:focus_n_flow/models/task_model.dart';
+import 'package:focus_n_flow/models/planned_task_model.dart';
 
-class Plan{
+class Plan {
   final String id;
   final String name;
   final DateTime createdAt;
-  final List<PlannedTask> items;
+  final Map<DateTime, List<PlannedTask>> days;
 
   Plan({
     required this.id,
     required this.name,
     required this.createdAt,
-    required this.items,
+    required this.days,
   });
+
+  Plan copyWith({
+    String? id,
+    String? name,
+    DateTime? createdAt,
+    Map<DateTime, List<PlannedTask>>? days,
+  }) {
+    return Plan(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      createdAt: createdAt ?? this.createdAt,
+      days: days ?? this.days,
+    );
+  }
 }

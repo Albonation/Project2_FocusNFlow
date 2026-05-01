@@ -6,6 +6,7 @@ import 'package:focus_n_flow/screens/add_edit_task_screen.dart';
 import 'package:focus_n_flow/services/task_service.dart';
 import 'package:focus_n_flow/theme/app_spacing.dart';
 import 'package:focus_n_flow/theme/app_theme_extensions.dart';
+import 'package:focus_n_flow/widgets/course_widgets/courses_section.dart';
 
 class CoursesTasksScreen extends StatefulWidget {
   const CoursesTasksScreen({super.key});
@@ -30,15 +31,15 @@ class _CoursesTasksScreenState extends State<CoursesTasksScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(result.message)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.message)),
+      );
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to delete task: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to delete task: $e')),
+      );
     }
   }
 
@@ -86,14 +87,18 @@ class _CoursesTasksScreenState extends State<CoursesTasksScreen> {
   void _openAddTaskScreen() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const AddEditTaskScreen()),
+      MaterialPageRoute(
+        builder: (_) => const AddEditTaskScreen(),
+      ),
     );
   }
 
   void _openEditTaskScreen(Task task) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => AddEditTaskScreen(task: task)),
+      MaterialPageRoute(
+        builder: (_) => AddEditTaskScreen(task: task),
+      ),
     );
   }
 
@@ -104,72 +109,119 @@ class _CoursesTasksScreenState extends State<CoursesTasksScreen> {
     if (user == null) {
       return Scaffold(
         body: Center(
-          child: Text('No user logged in', style: context.text.bodyLarge),
+          child: Padding(
+            padding: AppSpacing.screen,
+            child: Text(
+              'No user logged in',
+              textAlign: TextAlign.center,
+              style: context.text.bodyLarge?.copyWith(
+                color: context.colors.onSurfaceVariant,
+              ),
+            ),
+          ),
         ),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Tasks'), centerTitle: true),
-      body: StreamBuilder<List<Task>>(
-        stream: _taskRepository.getTasksForUser(user.uid),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      appBar: AppBar(
+        title: const Text('Courses & Tasks'),
+        centerTitle: true,
+      ),
+      body: ListView(
+        padding: AppSpacing.screen,
+        children: [
+          CoursesSection(userId: user.uid),
 
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: AppSpacing.screen,
-                child: Text(
-                  'Failed to load tasks: ${snapshot.error}',
-                  textAlign: TextAlign.center,
-                  style: context.text.bodyMedium?.copyWith(
-                    color: context.colors.error,
-                  ),
-                ),
-              ),
-            );
-          }
+          AppSpacing.gapXxl,
 
-          final tasks = snapshot.data ?? [];
-
-          if (tasks.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: AppSpacing.screen,
-                child: Text(
-                  'No tasks yet',
-                  style: context.text.bodyLarge?.copyWith(
-                    color: context.colors.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            );
-          }
-
-          return ListView.builder(
-            padding: AppSpacing.screen,
-            itemCount: tasks.length,
-            itemBuilder: (context, index) {
-              final task = tasks[index];
-
-              return Padding(
-                padding: AppSpacing.rowPadding,
-                child: _TaskListCard(
-                  task: task,
-                  onEdit: () => _openEditTaskScreen(task),
-                  onDelete: () => _showDeleteDialog(task),
-                ),
-              );
-            },
-          );
-        },
+          _TasksSection(
+            stream: _taskRepository.getTasksForUser(user.uid),
+            onEditTask: _openEditTaskScreen,
+            onDeleteTask: _showDeleteDialog,
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _openAddTaskScreen,
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
+
+class _TasksSection extends StatelessWidget {
+  final Stream<List<Task>> stream;
+  final void Function(Task task) onEditTask;
+  final void Function(Task task) onDeleteTask;
+
+  const _TasksSection({
+    required this.stream,
+    required this.onEditTask,
+    required this.onDeleteTask,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: AppSpacing.card,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'My Tasks',
+              style: context.text.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            AppSpacing.gapMd,
+
+            StreamBuilder<List<Task>>(
+              stream: stream,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const LinearProgressIndicator();
+                }
+
+                if (snapshot.hasError) {
+                  return Text(
+                    'Failed to load tasks: ${snapshot.error}',
+                    style: context.text.bodyMedium?.copyWith(
+                      color: context.colors.error,
+                    ),
+                  );
+                }
+
+                final tasks = snapshot.data ?? [];
+
+                if (tasks.isEmpty) {
+                  return Text(
+                    'No tasks yet',
+                    style: context.text.bodyLarge?.copyWith(
+                      color: context.colors.onSurfaceVariant,
+                    ),
+                  );
+                }
+
+                return Column(
+                  children: tasks.map((task) {
+                    return Padding(
+                      padding: AppSpacing.rowPadding,
+                      child: _TaskListCard(
+                        task: task,
+                        onEdit: () => onEditTask(task),
+                        onDelete: () => onDeleteTask(task),
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -205,9 +257,8 @@ class _TaskListCard extends StatelessWidget {
           task.title,
           style: context.text.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            decoration: isCompleted
-                ? TextDecoration.lineThrough
-                : TextDecoration.none,
+            decoration:
+            isCompleted ? TextDecoration.lineThrough : TextDecoration.none,
             color: isCompleted
                 ? context.colors.onSurfaceVariant
                 : context.colors.onSurface,
@@ -233,12 +284,17 @@ class _TaskListCard extends StatelessWidget {
             }
           },
           itemBuilder: (context) => [
-            const PopupMenuItem(value: 'edit', child: Text('Edit')),
+            const PopupMenuItem(
+              value: 'edit',
+              child: Text('Edit'),
+            ),
             PopupMenuItem(
               value: 'delete',
               child: Text(
                 'Delete',
-                style: TextStyle(color: context.appColors.danger),
+                style: TextStyle(
+                  color: context.appColors.danger,
+                ),
               ),
             ),
           ],

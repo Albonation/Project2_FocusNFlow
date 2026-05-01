@@ -92,34 +92,34 @@ class PlannerController extends ChangeNotifier {
   }
 
   // ---------- DRAG & DROP ----------
-  Future<void> moveTask(
-    String taskId,
-    DateTime newDate,
-  ) async {
+  Future<void> moveTask(String taskId, DateTime newDate) async {
     final normalized = DateTime(
       newDate.year,
       newDate.month,
       newDate.day,
     );
 
-    _plan = _plan.map((p) {
-      if (p.taskId == taskId) {
-        return PlannedTask(
-          taskId: p.taskId,
-          task: p.task,
-          hoursForDay: p.hoursForDay,
-          plannedDate: normalized,
-          isLocked: true,
-        );
-      }
-      return p;
-    }).toList();
+    
+    _plan.removeWhere((p) => p.taskId == taskId);
+
+  
+    final task = _tasks.firstWhere((t) => t.id == taskId);
+
+ 
+    final anchor = PlannedTask(
+      taskId: taskId,
+      task: task,
+      hoursForDay: task.estimatedHours,
+      plannedDate: normalized,
+      isLocked: true,
+    );
+
+    _plan.add(anchor);
 
     notifyListeners();
 
-    _isSaving = true;
+    
     await repository.savePlan(userId, weekId, _plan);
-    _isSaving = false;
 
     
     await refreshPlan();

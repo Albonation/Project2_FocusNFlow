@@ -1,4 +1,5 @@
 import 'package:focus_n_flow/models/planned_task_model.dart';
+import 'package:focus_n_flow/models/planning_model.dart';
 import 'package:focus_n_flow/models/task_model.dart';
 
 class PlannerEngine {
@@ -29,6 +30,77 @@ class PlannerEngine {
     _merge(map);
 
     return map;
+  }
+
+  Future<Plan> generateFromPrompt(String prompt, List<Task> tasks) async {
+    final now = DateTime.now();
+
+    final mode = _extractMode(prompt);
+
+    int daySpan = 7;
+
+    if (mode == "urgent") daySpan = 3;
+    if (mode == "light") daySpan = 10;
+
+    final days = List.generate(
+      daySpan,
+      (i) => now.add(Duration(days: i)),
+    );
+
+    final sortedTasks = [...tasks];
+
+    // smarter sorting based on mode
+    if (mode == "urgent") {
+      sortedTasks.sort((a, b) => a.deadline.compareTo(b.deadline));
+    } else if (mode == "light") {
+      sortedTasks.shuffle();
+    }
+
+    final Map<DateTime, List<PlannedTask>> result = {
+      for (final d in days) DateTime(d.year, d.month, d.day): []
+    };
+
+    int dayIndex = 0;
+
+    for (final task in sortedTasks) {
+      final day = days[dayIndex % days.length];
+
+      result[DateTime(day.year, day.month, day.day)]!.add(
+        PlannedTask(
+          taskId: task.id!,
+          task: task,
+          date: day,
+          hours: mode == "urgent" ? 3 : 2,
+        ),
+      );
+
+      dayIndex++;
+    }
+
+    return Plan(
+      id: now.millisecondsSinceEpoch.toString(),
+      name: prompt.isEmpty ? "AI Plan" : prompt,
+      createdAt: now,
+      days: result,
+    );
+  }
+
+  String _extractMode(String prompt) {
+    final p = prompt.toLowerCase();
+
+    if (p.contains("cram") || p.contains("urgent") || p.contains("asap")) {
+      return "urgent";
+    }
+
+    if (p.contains("light") || p.contains("easy")) {
+      return "light";
+    }
+
+    if (p.contains("exam") || p.contains("study")) {
+      return "study";
+    }
+
+    return "normal";
   }
 
   double _daysLeft(Task t) =>

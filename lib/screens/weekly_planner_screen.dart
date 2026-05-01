@@ -1,38 +1,45 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:focus_n_flow/repositories/task_repository.dart';
-import 'package:focus_n_flow/repositories/weekly_planner_repository.dart';
-import 'package:focus_n_flow/widgets/weekly_planner_widgets/weekly_planner_widget.dart';
+import 'package:focus_n_flow/services/planner_service.dart';
+import 'package:focus_n_flow/widgets/weekly_planner_widgets/console_view.dart';
+import 'package:focus_n_flow/widgets/weekly_planner_widgets/calendar_view.dart';
+import 'package:provider/provider.dart';
 
-class WeeklyPlannerScreen extends StatefulWidget {
-  const WeeklyPlannerScreen({super.key});
+class PlannerScreen extends StatefulWidget {
+  const PlannerScreen({super.key});
 
   @override
-  State<WeeklyPlannerScreen> createState() => _WeeklyPlannerScreenState();
+  State<PlannerScreen> createState() => _PlannerScreenState();
 }
 
-class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
-  final TaskRepository _repository = TaskRepository();
+class _PlannerScreenState extends State<PlannerScreen> {
+  bool _showCalendar = false;
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
+    return Consumer<PlannerController>(
+      builder: (context, controller, _) {
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text("Planner"),
+            actions: [
+              IconButton(
+                icon: Icon(
+                  _showCalendar
+                      ? Icons.keyboard
+                      : Icons.calendar_month,
+                ),
+                onPressed: () {
+                  setState(() => _showCalendar = !_showCalendar);
+                },
+              ),
+            ],
+          ),
 
-    if (user == null) {
-      return const Scaffold(
-        body: Center(child: Text("No user logged in")),
-      );
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Weekly Study Planner"),
-      ),
-      body: WeeklyPlannerWidget(
-        userId: user.uid,
-        repository: _repository,
-        plannerRepository: _repo2,
-      ),
+          body: _showCalendar
+              ? CalendarView(controller: controller)
+              : PlannerConsole(controller: controller),
+        );
+      },
     );
   }
 }

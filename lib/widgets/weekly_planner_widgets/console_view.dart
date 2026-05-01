@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:focus_n_flow/services/planner_service.dart';
-import 'package:focus_n_flow/widgets/weekly_planner_widgets/weekly_planner_widget.dart';
 
 class PlannerConsole extends StatefulWidget {
   final PlannerController controller;
@@ -31,11 +30,7 @@ class _PlannerConsoleState extends State<PlannerConsole> {
     setState(() => _loading = false);
 
     if (mounted) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => PlannerScreen(), // or toggle state
-        ),
-      );
+      setState(() => false);
     }
   }
 

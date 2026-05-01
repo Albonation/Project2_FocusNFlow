@@ -44,9 +44,9 @@ class PlannerEngine {
     // sort by urgency first, priority second
     active.sort((a, b) {
       final aDays = 
-        a.deadline.difference(DateTime.now()).inDays + 1;
+        a.deadline.difference(_now).inDays + 1;
       final bDays =
-        b.deadline.difference(DateTime.now()).inDays + 1;
+        b.deadline.difference(_now).inDays + 1;
 
       final aScore = a.priorityScore / aDays;
       final bScore = b.priorityScore / bDays;
@@ -191,7 +191,7 @@ class PlannerEngine {
 
     double remaining = task.estimatedHours;
     final daysUntilDeadline =
-      task.deadline.difference(DateTime.now()).inDays + 1;
+      task.deadline.difference(_now).inDays + 1;
 
     final urgencyMultiplier = 1/daysUntilDeadline;
 
@@ -318,7 +318,7 @@ class PlannerEngine {
           taskId: newTask.taskId,
           task: newTask.task,
           hoursForDay: remaining,
-          plannedDate: day,
+          plannedDate: day.add(const Duration(days: 1)),
         );
       }
 
@@ -326,7 +326,7 @@ class PlannerEngine {
       if (current.isNotEmpty) {
         final weakest = _findLowestPriority(current);
 
-        if (_isMoreUrgent(newTask, weakest, DateTime.now())) {
+        if (_isMoreUrgent(newTask, weakest)) {
           //Replace weaker task
           map[day] = current.where((t) => t != weakest).toList();
 
@@ -358,18 +358,21 @@ class PlannerEngine {
     String taskId,
     DateTime newDate,
   ) async {
-    await persistMove(taskId, newDate);
+    final normalized = _normalize(newDate);
+
+    await persistMove(taskId, normalized);
   }
 
   // HELPERS
   DateTime _normalize(DateTime d) =>
       DateTime(d.year, d.month, d.day);
+  
+  DateTime get _now => DateTime.now();
 
   PlannedTask _findLowestPriority(List<PlannedTask> tasks) {
-    final now = DateTime.now();
     tasks.sort((a, b) {
-      final aScore = _urgencyScore(a.task!, now);
-      final bScore = _urgencyScore(b.task!, now);
+      final aScore = _urgencyScore(a.task!, _now);
+      final bScore = _urgencyScore(b.task!, _now);
       return aScore.compareTo(bScore);
     });
 
@@ -379,10 +382,9 @@ class PlannerEngine {
   bool _isMoreUrgent(
     PlannedTask a,
     PlannedTask b,
-    DateTime now,
   ) {
-    final aScore = _urgencyScore(a.task!, now);
-    final bScore = _urgencyScore(b.task!, now);
+    final aScore = _urgencyScore(a.task!, _now);
+    final bScore = _urgencyScore(b.task!, _now);
 
     return aScore > bScore;
   }
@@ -397,11 +399,10 @@ class PlannerEngine {
   }
 
   List<DateTime> _getAvailableDays(Task task) {
-    final now = DateTime.now();
 
     final weekDays = List.generate(
       7,
-      (i) => _normalize(DateTime(now.year, now.month, now.day + i)),
+      (i) => _normalize(DateTime(_now.year, _now.month, _now.day + i)),
     );
 
     return weekDays

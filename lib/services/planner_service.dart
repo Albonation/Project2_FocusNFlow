@@ -44,6 +44,30 @@ class PlannerController extends ChangeNotifier {
     });
   }
 
+  Future<void> refreshedPlan() async {
+
+    //if no plan,, generate one
+    if (_plan.isEmpty) {
+      final map = engine.buildPlan(_tasks);
+      _plan = map.values.expand((e) => e).toList();
+
+      await repository.savePlan(userId, weekId, _plan);
+      notifyListeners();
+      return;
+    }
+
+    //otherwise => incremental rebalance
+    final updated = await engine.rebalance(
+      currentPlan: _plan,
+      tasks: _tasks,
+    );
+
+    _plan = updated;
+
+    await repository.savePlan(userId, weekId, plan);
+    notifyListeners();
+  }
+
   Future<void> moveTask(
     String taskId,
     DateTime newDate,

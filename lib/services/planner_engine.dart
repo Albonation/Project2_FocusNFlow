@@ -77,7 +77,7 @@ class PlannerEngine {
   //REBALANCE METHOD
   Future<List<PlannedTask>> rebalance({
     required List<PlannedTask> currentPlan,
-    required List<Taask> tasks,
+    required List<Task> tasks,
   }) async {
     final updatedPlan = <DateTime, List<PlannedTask>>{};
 
@@ -104,6 +104,28 @@ class PlannerEngine {
     return updatedPlan.values.expand((e) => e).toList();
   }
 
+  void _rebalanceSingleTask(
+    Map<DateTime, List<PlannedTask>> plan,
+    Task task,
+  ) {
+    final taskId = task.id!;
+
+    //remove exsisting entries for the task
+    for (final entry in plan.entries){
+      entry.value.removeWhere((p) => p.taskId == taskId);
+    }
+
+    final now = DateTime.now();
+
+    final days = List.generate(
+      7,
+      (i) => _normalize(DateTime(now.year, now.month, now.day + i)),
+    );
+
+    final distribution = distribute(task, days);
+
+    applyCapacity(plan, distribution);
+  }
   // DISTRIBUTION STRATEGY
 
   List<PlannedTask> distribute(Task task, List<DateTime> days) {

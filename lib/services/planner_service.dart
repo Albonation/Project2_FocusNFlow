@@ -31,9 +31,10 @@ class PlannerController extends ChangeNotifier {
     _taskSub?.cancel();
     _planSub?.cancel();
 
-    _taskSub = taskStream.listen((data) {
+    _taskSub = taskStream.listen((data) async {
       _tasks = data;
-      notifyListeners();
+      
+      await refreshedPlan();
     });
 
     _planSub = repository
@@ -72,17 +73,19 @@ class PlannerController extends ChangeNotifier {
     String taskId,
     DateTime newDate,
   ) async {
+    final normalized = DateTime(
+      newDate.year,
+      newDate.month,
+      newDate.day,
+    );
+
     final updated = _plan.map((p) {
       if (p.taskId == taskId) {
         return PlannedTask(
           taskId: p.taskId,
           task: p.task,
           hoursForDay: p.hoursForDay,
-          plannedDate: DateTime(
-            newDate.year,
-            newDate.month,
-            newDate.day,
-          ),
+          plannedDate: normalized,
         );
       }
       return p;
@@ -92,6 +95,8 @@ class PlannerController extends ChangeNotifier {
     notifyListeners();
 
     await repository.savePlan(userId, weekId, _plan);
+
+    await refreshedPlan();
   }
 
   @override

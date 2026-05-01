@@ -76,6 +76,21 @@ class PlannerController extends ChangeNotifier {
     _isSaving = false;
   }
 
+  // ---------- TASKS FOR DAY --------
+  List<PlannedTask> tasksForDay(DateTime day) {
+    final normalized = DateTime(day.year, day.month, day.day);
+
+    return _plan.where((p) {
+      final d = DateTime(
+        p.plannedDate.year,
+        p.plannedDate.month,
+        p.plannedDate.day,
+      );
+
+      return d == normalized;
+    }).toList();
+  }
+
   // ---------- DRAG & DROP ----------
   Future<void> moveTask(
     String taskId,

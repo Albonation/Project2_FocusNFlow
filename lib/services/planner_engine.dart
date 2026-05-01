@@ -7,12 +7,20 @@ class PlannerEngine {
   final String userId;
   final String weekId;
   static const double maxHoursPerDay = 12.0;
+  late final List<DateTime> weekDays;
 
   PlannerEngine({
     required this.repository,
     required this.userId,
     required this.weekId,
-  });
+  }) {
+    final now = DateTime.now();
+
+    weekDays = List.generate(
+      7,
+      (i) => _normalize(DateTime(now.year, now.month, now.day + i)),
+    );
+  }
 
   Future<void> persistMove(String taskId, DateTime newDate) async {
     await repository.movePlannedTask(
@@ -24,15 +32,11 @@ class PlannerEngine {
   }
 
   Map<DateTime, List<PlannedTask>> buildPlan(List<Task> tasks) {
-    final now = DateTime.now();
 
-    final days = List.generate(
-      7,
-      (i) => _normalize(DateTime(now.year, now.month, now.day + i)),
-    );
+    weekDays;
 
     final map = <DateTime, List<PlannedTask>>{
-      for (final d in days) d: <PlannedTask>[]
+      for (final d in weekDays) d: <PlannedTask>[]
     };
 
     final active = tasks.where((t) => !t.isOverdue && t.id != null).toList();
@@ -51,7 +55,7 @@ class PlannerEngine {
     });
 
     for (final task in active) {
-      final distribution = distribute(task, days);
+      final distribution = distribute(task, weekDays);
 
       applyCapacity(map, distribution);
     }
@@ -94,11 +98,11 @@ class PlannerEngine {
       list.removeWhere((p) => !validTaskIds.contains(p.taskId));
     });
 
-    // 🔥 MAIN FIX: rebalance per task WITH lock awareness
+    //MAIN FIX: rebalance per task WITH lock awareness
     for (final task in tasks) {
       if (task.id == null) continue;
 
-      _rebalanceSingleTaskWithLocks(map, task);
+      _rebalanceSingleTaskWithLocks(map, task, weekDays);
     }
 
     return map.values.expand((e) => e).toList();
@@ -107,64 +111,63 @@ class PlannerEngine {
   void _rebalanceSingleTaskWithLocks(
     Map<DateTime, List<PlannedTask>> map,
     Task task,
+    List<DateTime> weekDays,
   ) {
     final taskId = task.id!;
 
-    final allEntries = map.values.expand((e) => e).toList();
+    // ---------- STEP 1: collect locked ----------
+    final locked = <PlannedTask>[];
 
-    final locked = allEntries
-        .where((p) => p.taskId == taskId && p.isLocked)
-        .toList();
+    for (final list in map.values) {
+      for (final p in list) {
+        if (p.taskId == taskId && p.isLocked) {
+          locked.add(p);
+        }
+      }
+    }
 
-    // remove ALL existing entries for this task
-    map.forEach((day, list) {
+    // ---------- STEP 2: remove ALL task entries ----------
+    for (final list in map.values) {
       list.removeWhere((p) => p.taskId == taskId);
-    });
+    }
 
-    // 🔥 calculate remaining hours
+    // ---------- STEP 3: calculate remaining ----------
     final lockedHours = locked.fold<double>(
       0,
       (sum, t) => sum + t.hoursForDay,
     );
 
-    final remainingHours = task.estimatedHours - lockedHours;
+    final remainingHours =
+        (task.estimatedHours - lockedHours).clamp(0, double.infinity);
 
-    if (remainingHours <= 0) {
-      // only locked tasks remain
-      for (final p in locked) {
-        map.putIfAbsent(p.plannedDate, () => []).add(p);
-      }
-      return;
+    // ---------- STEP 4: re-add locked ONLY ----------
+    for (final p in locked) {
+      map.putIfAbsent(p.plannedDate, () => []);
+      map[p.plannedDate]!.add(p);
     }
 
-    // available days BEFORE deadline
-    final now = DateTime.now();
+    // nothing left to distribute
+    if (remainingHours <= 0) return;
 
-    final days = List.generate(
-      7,
-      (i) => _normalize(DateTime(now.year, now.month, now.day + i)),
-    ).where((d) => !d.isAfter(task.deadline)).toList();
+    // ---------- STEP 5: stable available days ----------
+    final availableDays = weekDays
+        .where((d) => !d.isAfter(task.deadline))
+        .toList();
 
-    if (days.isEmpty) {
-      // fallback: just keep locked
-      for (final p in locked) {
-        map.putIfAbsent(p.plannedDate, () => []).add(p);
-      }
-      return;
-    }
+    if (availableDays.isEmpty) return;
 
-    double remaining = remainingHours;
+    // ---------- STEP 6: distribute remaining ----------
+    num remaining = remainingHours;
 
-    //redistribute ONLY remaining hours
-    for (int i = 0; i < days.length; i++) {
-      final day = days[i];
+    for (int i = 0; i < availableDays.length; i++) {
+      final day = availableDays[i];
+      final daysLeft = availableDays.length - i;
 
-      final daysLeft = days.length - i;
       final portion = remaining / daysLeft;
 
-      if (portion <= 0) continue;
+      map.putIfAbsent(day, () => []);
 
-      map.putIfAbsent(day, () => []).add(
+      map[day]!.add(
         PlannedTask(
           taskId: taskId,
           task: task,
@@ -175,11 +178,6 @@ class PlannerEngine {
       );
 
       remaining -= portion;
-    }
-
-    //add locked tasks BACK 
-    for (final p in locked) {
-      map.putIfAbsent(p.plannedDate, () => []).add(p);
     }
   }
   // DISTRIBUTION STRATEGY
@@ -235,6 +233,36 @@ class PlannerEngine {
 
     if (remaining <= 0) break;
   }
+
+    return result;
+  }
+
+  List<PlannedTask> distributeRemaining(Task task, double remainingHours) {
+    final days = _getAvailableDays(task);
+
+    if (days.isEmpty) return [];
+
+    final result = <PlannedTask>[];
+    double remaining = remainingHours;
+
+    for (int i = 0; i < days.length; i++){
+      final day = days[i];
+      final daysLeft = days.length - i;
+
+      final portion = remaining / daysLeft;
+
+      result.add(
+        PlannedTask(
+          taskId: task.id!,
+          task: task, 
+          hoursForDay: portion, 
+          plannedDate: _normalize(day),
+          isLocked: false,
+        ),
+      );
+
+      remaining -= portion;
+    }
 
     return result;
   }
@@ -298,7 +326,7 @@ class PlannerEngine {
       if (current.isNotEmpty) {
         final weakest = _findLowestPriority(current);
 
-        if (_isMoreUrgent(newTask, weakest)) {
+        if (_isMoreUrgent(newTask, weakest, DateTime.now())) {
           //Replace weaker task
           map[day] = current.where((t) => t != weakest).toList();
 
@@ -347,14 +375,36 @@ class PlannerEngine {
     return tasks.first;
   }
 
-  bool _isMoreUrgent(PlannedTask a, PlannedTask b) {
-    return _urgencyScore(a.task!) > _urgencyScore(b.task!);
+  bool _isMoreUrgent(
+    PlannedTask a,
+    PlannedTask b,
+    DateTime now,
+  ) {
+    final aScore = _urgencyScore(a.task!, now);
+    final bScore = _urgencyScore(b.task!, now);
+
+    return aScore > bScore;
   }
 
-  double _urgencyScore(Task task) {
-    final daysLeft =
-        task.deadline.difference(DateTime.now()).inDays + 1;
+  double _urgencyScore(Task task, DateTime now) {
+    final hoursLeft =
+        task.deadline.difference(now).inHours.toDouble();
 
-    return task.priorityScore / daysLeft;
+    final safeHours = hoursLeft.clamp(1, double.infinity);
+
+    return task.priorityScore / safeHours;
+  }
+
+  List<DateTime> _getAvailableDays(Task task) {
+    final now = DateTime.now();
+
+    final weekDays = List.generate(
+      7,
+      (i) => _normalize(DateTime(now.year, now.month, now.day + i)),
+    );
+
+    return weekDays
+        .where((d) => !d.isAfter(task.deadline))
+        .toList();
   }
 }

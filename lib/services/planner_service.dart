@@ -2,71 +2,78 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:focus_n_flow/models/planning_model.dart';
 import 'package:focus_n_flow/models/task_model.dart';
+import 'package:focus_n_flow/repositories/weekly_planner_repository.dart';
 import 'package:focus_n_flow/services/planner_engine.dart';
 
 class PlannerController extends ChangeNotifier {
   final PlannerEngine engine;
+  final WeeklyPlannerRepository repository;
+  final String userId;
+  final String weekId;
 
-  PlannerController({required this.engine});
+  PlannerController({
+    required this.engine,
+    required this.repository,
+    required this.userId,
+    required this.weekId,
+  });
 
   List<Task> _tasks = [];
-  Map<DateTime, List<PlannedTask>> _plan = {};
-
   List<Task> get tasks => _tasks;
-  Map<DateTime, List<PlannedTask>> get plan => _plan;
 
-  StreamSubscription? _sub;
+  List<PlannedTask> _plan = [];
+  List<PlannedTask> get plan => _plan;
 
-  void bind(Stream<List<PlannedTask>> stream) {
-    _sub?.cancel();
+  StreamSubscription? _taskSub;
+  StreamSubscription? _planSub;
 
-    _sub = stream.listen((data) {
-      final map = <DateTime, List<PlannedTask>>{};
+  void bind(Stream<List<Task>> taskStream) {
+    _taskSub?.cancel();
+    _planSub?.cancel();
 
-      for(final t in data){
-        final day = DateTime(
-          t.plannedDate.year,
-          t.plannedDate.month,
-          t.plannedDate.day,
-        );
+    _taskSub = taskStream.listen((data) {
+      _tasks = data;
+      notifyListeners();
+    });
 
-        map.putIfAbsent(day, () => []);
-        map[day]!.add(t);
-      }
-
-      _plan = map;
+    _planSub = repository
+        .getPlanStream(userId, weekId)
+        .listen((data) {
+      _plan = data;
       notifyListeners();
     });
   }
 
-  List<PlannedTask> tasksForDay(DateTime day) {
-    final normalized = DateTime(day.year, day.month, day.day);
-    return _plan[normalized] ?? [];
-  }
-
-  Map<DateTime, List<PlannedTask>> groupedWeek() => _plan;
-
-  Future<void> moveTask(String taskId, DateTime newDate) async {
-    // 1. update local task (so rebuild uses new date)
-    _tasks = _tasks.map((t) {
-      if (t.id == taskId) {
-        return t.copyWith(deadline: newDate);
+  Future<void> moveTask(
+    String taskId,
+    DateTime newDate,
+  ) async {
+    final updated = _plan.map((p) {
+      if (p.taskId == taskId) {
+        return PlannedTask(
+          taskId: p.taskId,
+          task: p.task,
+          hoursForDay: p.hoursForDay,
+          plannedDate: DateTime(
+            newDate.year,
+            newDate.month,
+            newDate.day,
+          ),
+        );
       }
-      return t;
+      return p;
     }).toList();
 
-    // 2. persist to backend
-    await engine.persistMove(taskId, newDate);
-
-    // 3. rebuild entire plan
-    _plan = engine.buildPlan(_tasks);
-
+    _plan = updated;
     notifyListeners();
+
+    await repository.savePlan(userId, weekId, _plan);
   }
 
   @override
   void dispose() {
-    _sub?.cancel();
+    _taskSub?.cancel();
+    _planSub?.cancel();
     super.dispose();
   }
 }

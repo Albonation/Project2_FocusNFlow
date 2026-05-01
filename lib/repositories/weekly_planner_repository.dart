@@ -17,18 +17,19 @@ class WeeklyPlannerRepository {
   Future<void> savePlan(
     String userId,
     String weekId,
-    List<PlannedTask> tasks,
+    List<PlannedTask> plan,
   ) async {
-    final batch = _firestore.batch();
-    final ref = _getPlanRef(userId, weekId);
+    final data = plan.map((p) => {
+      'taskId': p.taskId,
+      'plannedDate': p.plannedDate.toIso8601String(),
+      'hoursForDay': p.hoursForDay,
+    }).toList();
 
-    for (final task in tasks) {
-      final doc = ref.doc(); // auto id for new plans
-
-      batch.set(doc, task.toMap());
-    }
-
-    await batch.commit();
+    // store full weekly plan
+    await _firestore
+        .collection('plans')
+        .doc('$userId-$weekId')
+        .set({'items': data});
   }
 
   /// STREAM PLAN (REAL TIME CALENDAR)
@@ -101,5 +102,28 @@ class WeeklyPlannerRepository {
     return _getPlanRef(userId, weekId)
         .doc(taskDocId)
         .delete();
+  }
+
+  Stream<List<PlannedTask>> getPlanStream(
+    String userId,
+    String weekId,
+  ) {
+    return _firestore
+        .collection('plans')
+        .doc('$userId-$weekId')
+        .snapshots()
+        .map((doc) {
+      if (!doc.exists) return [];
+
+      final list = (doc.data()?['items'] as List);
+
+      return list.map((e) {
+        return PlannedTask(
+          taskId: e['taskId'],
+          plannedDate: DateTime.parse(e['plannedDate']),
+          hoursForDay: (e['hoursForDay'] as num).toDouble(),
+        );
+      }).toList();
+    });
   }
 }

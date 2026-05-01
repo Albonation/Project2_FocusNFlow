@@ -39,6 +39,9 @@ class _WeeklyPlannerWidgetState extends State<WeeklyPlannerWidget> {
     );
 
     controller = PlannerController(
+      repository: widget.plannerRepository,
+      userId: widget.userId,
+      weekId: _currentWeekId(),
       engine: engine,
     );
 

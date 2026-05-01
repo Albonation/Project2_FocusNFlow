@@ -59,6 +59,29 @@ class PlannerEngine {
     return map;
   }
 
+  Future<List<PlannedTask>> generateIfEmpty(
+    List<Task> tasks,
+    List<PlannedTask>? existingPlan,
+  ) async {
+    if (existingPlan != null && existingPlan.isNotEmpty) {
+      return existingPlan;
+    }
+
+    final map = buildPlan(tasks);
+
+    final flat = map.values.expand((e) => e).toList();
+
+    return flat;
+  }
+
+  //REBALANCE METHOD
+  Future<List<PlannedTask>> rebalance({
+    required List<PlannedTask> currentPlan,
+    required List<Taask> tasks,
+  }) async {
+    final updatedPlan = <DateTime, List<PlannedTask>>{};
+  }
+
   // DISTRIBUTION STRATEGY
 
   List<PlannedTask> distribute(Task task, List<DateTime> days) {
@@ -119,44 +142,86 @@ class PlannerEngine {
   // CAPACITY CONSTRAINTS
   void applyCapacity(
     Map<DateTime, List<PlannedTask>> map,
-    List<PlannedTask> tasks,
+    List<PlannedTask> incoming,
   ) {
-    for (final task in tasks) {
-      double remaining = task.hoursForDay;
-      DateTime day = _normalize(task.plannedDate);
+    for (final task in incoming) {
+      _placeWithPressure(map, task);
+    }
+  }
 
-      while (remaining > 0) {
-        final current = map[day] ?? [];
+  void _placeWithPressure(
+    Map<DateTime, List<PlannedTask>> map,
+    PlannedTask newTask,
+  ) {
+    DateTime day = _normalize(newTask.plannedDate);
 
-        final used = current.fold<double>(
-          0,
-          (sum, t) => sum + t.hoursForDay,
+    while (true) {
+      final current = map[day] ?? [];
+
+      final used = current.fold<double>(
+        0,
+        (sum, t) => sum + t.hoursForDay,
+      );
+
+      final free = maxHoursPerDay - used;
+
+      //If space exists → place it
+      if (free > 0) {
+        final allocated =
+            newTask.hoursForDay > free ? free : newTask.hoursForDay;
+
+        map[day] = [
+          ...current,
+          PlannedTask(
+            taskId: newTask.taskId,
+            task: newTask.task,
+            hoursForDay: allocated,
+            plannedDate: day,
+          ),
+        ];
+
+        final remaining = newTask.hoursForDay - allocated;
+
+        // if fully placed -> done
+        if (remaining <= 0) return;
+
+        // otherwise continue placing remainder
+        newTask = PlannedTask(
+          taskId: newTask.taskId,
+          task: newTask.task,
+          hoursForDay: remaining,
+          plannedDate: day,
         );
-
-        final free = maxHoursPerDay - used;
-
-        if (free > 0) {
-          final allocated = remaining > free ? free : remaining;
-
-          map[day] = [
-            ...current,
-            PlannedTask(
-              taskId: task.taskId,
-              task: task.task,
-              hoursForDay: allocated,
-              plannedDate: day,
-            ),
-          ];
-
-          remaining -= allocated;
-        }
-
-        // move to next day if full
-        day = _normalize(day.add(const Duration(days: 1)));
-
-        // safety stop (avoid infinite loop)
-        if (!map.containsKey(day)) break;
       }
+
+      // No space -> apply pressure
+      if (current.isNotEmpty) {
+        final weakest = _findLowestPriority(current);
+
+        if (_isMoreUrgent(newTask, weakest)) {
+          //Replace weaker task
+          map[day] = current.where((t) => t != weakest).toList();
+
+          // Put weaker task back into system (push forward)
+          _placeWithPressure(
+            map,
+            PlannedTask(
+              taskId: weakest.taskId,
+              task: weakest.task,
+              hoursForDay: weakest.hoursForDay,
+              plannedDate: _normalize(day.add(const Duration(days: 1))),
+            ),
+          );
+
+          continue; //retry placing new task
+        }
+      }
+
+      //Move forward if cannot replace
+      day = _normalize(day.add(const Duration(days: 1)));
+
+      //safety stop
+      if (!map.containsKey(day)) return;
     }
   }
 
@@ -171,4 +236,25 @@ class PlannerEngine {
   // HELPERS
   DateTime _normalize(DateTime d) =>
       DateTime(d.year, d.month, d.day);
+
+  PlannedTask _findLowestPriority(List<PlannedTask> tasks) {
+    tasks.sort((a, b) {
+      final aScore = _urgencyScore(a.task!);
+      final bScore = _urgencyScore(b.task!);
+      return aScore.compareTo(bScore);
+    });
+
+    return tasks.first;
+  }
+
+  bool _isMoreUrgent(PlannedTask a, PlannedTask b) {
+    return _urgencyScore(a.task!) > _urgencyScore(b.task!);
+  }
+
+  double _urgencyScore(Task task) {
+    final daysLeft =
+        task.deadline.difference(DateTime.now()).inDays + 1;
+
+    return task.priorityScore / daysLeft;
+  }
 }

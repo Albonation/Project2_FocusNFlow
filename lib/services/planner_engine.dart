@@ -366,9 +366,10 @@ class PlannerEngine {
       DateTime(d.year, d.month, d.day);
 
   PlannedTask _findLowestPriority(List<PlannedTask> tasks) {
+    final now = DateTime.now()
     tasks.sort((a, b) {
-      final aScore = _urgencyScore(a.task!);
-      final bScore = _urgencyScore(b.task!);
+      final aScore = _urgencyScore(a.task!, now);
+      final bScore = _urgencyScore(b.task!, now);
       return aScore.compareTo(bScore);
     });
 

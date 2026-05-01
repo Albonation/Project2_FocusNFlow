@@ -66,6 +66,8 @@ class PlannerEngine {
         _placeWithPressure(map, part);
       }
     }
+    _mergeSameTasksPerDay(map);
+    
     return map;
   }
 
@@ -362,6 +364,35 @@ class PlannerEngine {
 
       if(day.isAfter(newTask.task!.deadline)) return;
     }
+  }
+
+  // MERGE SAME TASK
+  void _mergeSameTasksPerDay(Map<DateTime, List<PlannedTask>> map) {
+    map.forEach((day, list) {
+      final grouped = <String, PlannedTask>{};
+
+      for (final p in list) {
+        final key = p.taskId;
+
+        if (grouped.containsKey(key)) {
+          final existing = grouped[key]!;
+
+          grouped[key] = PlannedTask(
+            taskId: existing.taskId,
+            task: existing.task,
+            hoursForDay: existing.hoursForDay + p.hoursForDay,
+            plannedDate: day,
+
+            // preserve lock if ANY part is locked
+            isLocked: existing.isLocked || p.isLocked,
+          );
+        } else {
+          grouped[key] = p;
+        }
+      }
+
+      map[day] = grouped.values.toList();
+    });
   }
 
   // MOVE TASK (DRAG & DROP)

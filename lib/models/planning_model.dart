@@ -10,6 +10,8 @@ class PlannedTask {
   final DateTime? startTime;
   final DateTime? endTime;
 
+  final bool isLocked;
+
   PlannedTask({
     required this.taskId,
     this.task,
@@ -17,6 +19,7 @@ class PlannedTask {
     required this.plannedDate,
     this.startTime,
     this.endTime,
+    this.isLocked = false,
   });
 
   /// Firestore write

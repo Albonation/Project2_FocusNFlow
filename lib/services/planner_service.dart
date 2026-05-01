@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:focus_n_flow/models/planning_model.dart';
 import 'package:focus_n_flow/models/task_model.dart';
@@ -27,48 +28,55 @@ class PlannerController extends ChangeNotifier {
   StreamSubscription? _taskSub;
   StreamSubscription? _planSub;
 
+  bool _isSaving = false; 
+
   void bind(Stream<List<Task>> taskStream) {
     _taskSub?.cancel();
     _planSub?.cancel();
 
+    // TASK STREAM
     _taskSub = taskStream.listen((data) async {
       _tasks = data;
-      
-      await refreshedPlan();
+      await refreshPlan();
     });
 
+    // PLAN STREAM (source of truth from DB)
     _planSub = repository
         .getPlanStream(userId, weekId)
         .listen((data) {
+      if (_isSaving) return; 
+
       _plan = data;
       notifyListeners();
     });
   }
 
-  Future<void> refreshedPlan() async {
+  // ---------- PLAN LOGIC ----------
+  Future<void> refreshPlan() async {
+    if (_tasks.isEmpty) return;
 
-    //if no plan,, generate one
+    List<PlannedTask> updated;
+
     if (_plan.isEmpty) {
       final map = engine.buildPlan(_tasks);
-      _plan = map.values.expand((e) => e).toList();
-
-      await repository.savePlan(userId, weekId, _plan);
-      notifyListeners();
-      return;
+      updated = map.values.expand((e) => e).toList();
+    } else {
+      updated = await engine.rebalance(
+        currentPlan: _plan,
+        tasks: _tasks,
+      );
     }
 
-    //otherwise => incremental rebalance
-    final updated = await engine.rebalance(
-      currentPlan: _plan,
-      tasks: _tasks,
-    );
-
     _plan = updated;
-
-    await repository.savePlan(userId, weekId, plan);
     notifyListeners();
+
+    // prevent stream echo loop
+    _isSaving = true;
+    await repository.savePlan(userId, weekId, _plan);
+    _isSaving = false;
   }
 
+  // ---------- DRAG & DROP ----------
   Future<void> moveTask(
     String taskId,
     DateTime newDate,
@@ -79,24 +87,50 @@ class PlannerController extends ChangeNotifier {
       newDate.day,
     );
 
-    final updated = _plan.map((p) {
+    _plan = _plan.map((p) {
       if (p.taskId == taskId) {
         return PlannedTask(
           taskId: p.taskId,
           task: p.task,
           hoursForDay: p.hoursForDay,
           plannedDate: normalized,
+          isLocked: true,
         );
       }
       return p;
     }).toList();
 
-    _plan = updated;
     notifyListeners();
 
+    _isSaving = true;
     await repository.savePlan(userId, weekId, _plan);
+    _isSaving = false;
 
-    await refreshedPlan();
+    
+    await refreshPlan();
+  }
+
+  // ---------- WEEK GROUPING ----------
+  Map<DateTime, List<PlannedTask>> groupedWeek() {
+    final map = <DateTime, List<PlannedTask>>{};
+
+    DateTime normalize(DateTime d) =>
+        DateTime(d.year, d.month, d.day);
+
+    for (final task in _plan) {
+      final day = normalize(task.plannedDate);
+
+      map.putIfAbsent(day, () => []);
+      map[day]!.add(task);
+    }
+
+    // sort 
+    for (final list in map.values) {
+      list.sort((a, b) =>
+          b.task!.priorityScore.compareTo(a.task!.priorityScore));
+    }
+
+    return map;
   }
 
   @override

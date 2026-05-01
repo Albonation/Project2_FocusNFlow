@@ -6,7 +6,7 @@ class PlannerEngine {
   final WeeklyPlannerRepository repository;
   final String userId;
   final String weekId;
-  static const double maxHoursPerDay = 4.0;
+  static const double maxHoursPerDay = 12.0;
 
   PlannerEngine({
     required this.repository,
@@ -79,52 +79,108 @@ class PlannerEngine {
     required List<PlannedTask> currentPlan,
     required List<Task> tasks,
   }) async {
-    final updatedPlan = <DateTime, List<PlannedTask>>{};
+    final map = <DateTime, List<PlannedTask>>{};
 
-    //rebuild map from plan
+    // rebuild map from plan
     for (final p in currentPlan) {
       final day = _normalize(p.plannedDate);
-      updatedPlan.putIfAbsent(day, () => []).add(p);
+      map.putIfAbsent(day, () => []).add(p);
     }
 
-    //detect changes
-    final taskIds = tasks.map((t) => t.id).toSet();
-    
+    // remove deleted tasks
+    final validTaskIds = tasks.map((t) => t.id).toSet();
 
-    updatedPlan.forEach((day, list) {
-      list.removeWhere((p) => !taskIds.contains(p.taskId));
+    map.forEach((day, list) {
+      list.removeWhere((p) => !validTaskIds.contains(p.taskId));
     });
 
+    // 🔥 MAIN FIX: rebalance per task WITH lock awareness
     for (final task in tasks) {
       if (task.id == null) continue;
 
-      _rebalanceSingleTask(updatedPlan, task);
+      _rebalanceSingleTaskWithLocks(map, task);
     }
 
-    return updatedPlan.values.expand((e) => e).toList();
+    return map.values.expand((e) => e).toList();
   }
 
-  void _rebalanceSingleTask(
-    Map<DateTime, List<PlannedTask>> plan,
+  void _rebalanceSingleTaskWithLocks(
+    Map<DateTime, List<PlannedTask>> map,
     Task task,
   ) {
     final taskId = task.id!;
 
-    //remove exsisting entries for the task
-    for (final entry in plan.entries){
-      entry.value.removeWhere((p) => p.taskId == taskId);
+    final allEntries = map.values.expand((e) => e).toList();
+
+    final locked = allEntries
+        .where((p) => p.taskId == taskId && p.isLocked)
+        .toList();
+
+    // remove ALL existing entries for this task
+    map.forEach((day, list) {
+      list.removeWhere((p) => p.taskId == taskId);
+    });
+
+    // 🔥 calculate remaining hours
+    final lockedHours = locked.fold<double>(
+      0,
+      (sum, t) => sum + t.hoursForDay,
+    );
+
+    final remainingHours = task.estimatedHours - lockedHours;
+
+    if (remainingHours <= 0) {
+      // only locked tasks remain
+      for (final p in locked) {
+        map.putIfAbsent(p.plannedDate, () => []).add(p);
+      }
+      return;
     }
 
+    // available days BEFORE deadline
     final now = DateTime.now();
 
     final days = List.generate(
       7,
       (i) => _normalize(DateTime(now.year, now.month, now.day + i)),
-    );
+    ).where((d) => !d.isAfter(task.deadline)).toList();
 
-    final distribution = distribute(task, days);
+    if (days.isEmpty) {
+      // fallback: just keep locked
+      for (final p in locked) {
+        map.putIfAbsent(p.plannedDate, () => []).add(p);
+      }
+      return;
+    }
 
-    applyCapacity(plan, distribution);
+    double remaining = remainingHours;
+
+    //redistribute ONLY remaining hours
+    for (int i = 0; i < days.length; i++) {
+      final day = days[i];
+
+      final daysLeft = days.length - i;
+      final portion = remaining / daysLeft;
+
+      if (portion <= 0) continue;
+
+      map.putIfAbsent(day, () => []).add(
+        PlannedTask(
+          taskId: taskId,
+          task: task,
+          hoursForDay: portion,
+          plannedDate: day,
+          isLocked: false,
+        ),
+      );
+
+      remaining -= portion;
+    }
+
+    //add locked tasks BACK 
+    for (final p in locked) {
+      map.putIfAbsent(p.plannedDate, () => []).add(p);
+    }
   }
   // DISTRIBUTION STRATEGY
 

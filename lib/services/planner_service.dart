@@ -15,153 +15,108 @@ class PlannerController extends ChangeNotifier {
 
   Plan? currentPlan;
 
-  DateTime _normalize(DateTime d) =>
-      DateTime(d.year, d.month, d.day);
-
-  void generatePlan(List<Task> input) {
-    tasks = input;
-
-    final days = List.generate(
-      7,
-      (i) => _normalize(DateTime.now().add(Duration(days: i))),
-    );
-
-    final generatedDays = engine.generate(
-      tasks: tasks,
-      days: days,
-    );
-
+  // ---------------------------
+  // CREATE EMPTY PLAN
+  // ---------------------------
+  void createEmptyPlan() {
     currentPlan = Plan(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: "Generated Plan",
+      name: "New Plan",
       createdAt: DateTime.now(),
-      days: Map<DateTime, List<PlannedTask>>.from(generatedDays),
+      days: {},
     );
 
     notifyListeners();
   }
 
-  void moveTask(PlannedTask task, DateTime newDay) {
-    if (currentPlan == null) return;
+  // ---------------------------
+  // AI GENERATION
+  // ---------------------------
+  void generateAIPlan() {
+    currentPlan = engine.autoGenerate(tasks);
+    notifyListeners();
+  }
 
-    final oldDay = _normalize(task.date);
-    final targetDay = _normalize(newDay);
+  // ---------------------------
+  // MANUAL ALLOCATION
+  // ---------------------------
+  void addManualAllocation(Task task, DateTime day, double hours) {
+    if (currentPlan == null) {
+      createEmptyPlan();
+    }
 
     final updatedDays = Map<DateTime, List<PlannedTask>>.from(
       currentPlan!.days,
     );
 
-    // ensure lists exist
-    updatedDays.putIfAbsent(oldDay, () => []);
-    updatedDays.putIfAbsent(targetDay, () => []);
+    updatedDays[day] ??= [];
 
-    // remove from old day
-    updatedDays[oldDay] = updatedDays[oldDay]!
-        .where((t) => t.taskId != task.taskId)
-        .toList();
-
-    // check if task exists in target day
-    final index = updatedDays[targetDay]!.indexWhere(
-      (t) => t.taskId == task.taskId,
+    updatedDays[day]!.add(
+      PlannedTask(
+        taskId: task.id!,
+        task: task,
+        date: day,
+        hours: hours,
+      ),
     );
 
-    if (index != -1) {
-      final existing = updatedDays[targetDay]![index];
-
-      updatedDays[targetDay]![index] = existing.copyWith(
-        hours: existing.hours + task.hours,
-      );
-    } else {
-      updatedDays[targetDay]!.add(
-        task.copyWith(date: newDay),
-      );
-    }
-
-    currentPlan = currentPlan!.copyWith(
-      days: updatedDays,
-    );
+    currentPlan = currentPlan!.copyWith(days: updatedDays);
 
     notifyListeners();
   }
 
-  List<Plan> savedPlans = [];
-  String? selectedPlanId;
-
-  void savePlan(String? name) {
+  // ---------------------------
+  // REMOVE ALLOCATION
+  // ---------------------------
+  void removeAllocation(PlannedTask task) {
     if (currentPlan == null) return;
 
-    final updated = currentPlan!.copyWith(
-      name: name ?? currentPlan!.name,
+    final updatedDays = Map<DateTime, List<PlannedTask>>.from(
+      currentPlan!.days,
     );
 
-    currentPlan = updated;
+    updatedDays.forEach((day, list) {
+      list.removeWhere((t) => t.taskId == task.taskId);
+    });
 
-    final index = savedPlans.indexWhere(
-      (p) => p.id == updated.id,
-    );
-
-    if (index == -1) {
-      savedPlans.add(updated);
-    } else {
-      savedPlans[index] = updated;
-    }
-
-    selectedPlanId = updated.id;
+    currentPlan = currentPlan!.copyWith(days: updatedDays);
 
     notifyListeners();
   }
 
-  void loadPlan(String id) {
-    final plan = savedPlans.firstWhere(
-      (p) => p.id == id,
+  // ---------------------------
+  // MOVE TASK (drag/drop)
+  // ---------------------------
+  void moveTask(PlannedTask task, DateTime newDay) {
+    if (currentPlan == null) return;
+
+    final updatedDays = Map<DateTime, List<PlannedTask>>.from(
+      currentPlan!.days,
     );
 
-    currentPlan = plan;
-    selectedPlanId = id;
+    // remove from old day
+    updatedDays.forEach((day, list) {
+      list.removeWhere((t) => t.taskId == task.taskId);
+    });
+
+    // add to new day
+    updatedDays[newDay] ??= [];
+
+    updatedDays[newDay]!.add(
+      task.copyWith(date: newDay),
+    );
+
+    currentPlan = currentPlan!.copyWith(days: updatedDays);
 
     notifyListeners();
   }
 
-  void setCurrentPlan(Plan plan) {
-    currentPlan = plan;
+  // ---------------------------
+  // SAVE (placeholder)
+  // ---------------------------
+  Future<void> savePlanToFirestore() async {
+    if (currentPlan == null) return;
 
-    final index = savedPlans.indexWhere(
-      (p) => p.id == plan.id,
-    );
-
-    if (index == -1) {
-      savedPlans.add(plan);
-    } else {
-      savedPlans[index] = plan;
-    }
-
-    selectedPlanId = plan.id;
-
-    notifyListeners();
-  }
-
-  void createEmptyPlan() {
-    final now = DateTime.now();
-
-    final days = List.generate(
-      7,
-      (i) => now.add(Duration(days: i)),
-    );
-
-    currentPlan = Plan(
-      id: now.millisecondsSinceEpoch.toString(),
-      name: "New Plan",
-      createdAt: now,
-      days: {
-        for (final d in days) d: [],
-      },
-    );
-
-    notifyListeners();
-  }
-
-  void clearPlan() {
-    currentPlan = null;
-    notifyListeners();
+    // later: repository.save(currentPlan)
   }
 }

@@ -1,18 +1,36 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import 'package:focus_n_flow/theme/app_theme.dart';
 import 'package:focus_n_flow/theme/theme_controller.dart';
+import 'package:focus_n_flow/services/planner_service.dart';
+import 'package:focus_n_flow/services/planner_engine.dart';
+
 import 'auth/auth_gate.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   final themeController = ThemeController();
   await themeController.loadTheme();
 
-  runApp(MyApp(themeController: themeController));
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => PlannerController(
+            engine: PlannerEngine(),
+          ),
+        ),
+      ],
+      child: MyApp(themeController: themeController),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -20,7 +38,6 @@ class MyApp extends StatelessWidget {
 
   const MyApp({super.key, required this.themeController});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(

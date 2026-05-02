@@ -13,6 +13,7 @@ class StudyGroupCard extends StatelessWidget {
   final VoidCallback onLeave;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onOpenGroup;
   final VoidCallback onOpenChat;
 
   const StudyGroupCard({
@@ -25,6 +26,7 @@ class StudyGroupCard extends StatelessWidget {
     required this.onLeave,
     required this.onEdit,
     required this.onDelete,
+    required this.onOpenGroup,
     required this.onOpenChat,
   });
 
@@ -36,7 +38,7 @@ class StudyGroupCard extends StatelessWidget {
       margin: EdgeInsets.zero,
       child: InkWell(
         borderRadius: BorderRadius.circular(AppCorners.lg),
-        onTap: _canOpenChat ? onOpenChat : null,
+        onTap: onOpenGroup,
         child: Padding(
           padding: AppSpacing.card,
           child: Column(

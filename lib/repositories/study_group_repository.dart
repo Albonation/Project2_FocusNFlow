@@ -227,19 +227,50 @@ class StudyGroupRepository {
   }
 
   //update an existing group
+  //uses a transaction to verify that the requesting user owns the group
+  //before changing the group's editable fields.
   Future<void> updateGroup({
     required String groupId,
+    required String userId,
     required String name,
     required String description,
   }) async {
     try {
       _validateGroupId(groupId);
+      _validateUserId(userId);
       _validateGroupText(name);
 
-      await _groupsRef.doc(groupId).update({
-        'name': name.trim(),
-        'description': description.trim(),
-        'updatedAt': Timestamp.now(),
+      //reference to the group document
+      final groupRef = _groupsRef.doc(groupId);
+
+      await _firestore.runTransaction((transaction) async {
+        //read the group document inside the transaction so ownership and
+        //active status are checked against the latest firestore state
+        final groupSnapshot = await transaction.get(groupRef);
+        final groupData = groupSnapshot.data();
+
+        //check if group exists
+        if (!groupSnapshot.exists || groupData == null) {
+          throw Exception('Study group no longer exists.');
+        }
+
+        //check if user is owner of group
+        if (groupData['createdBy'] != userId) {
+          throw Exception('Only the group owner can update this group.');
+        }
+
+        //check if group is active
+        final isActive = groupData['isActive'] == true;
+        if (!isActive) {
+          throw Exception('This study group is not active.');
+        }
+
+        //update the editable group fields and refresh updatedAt
+        transaction.update(groupRef, {
+          'name': name.trim(),
+          'description': description.trim(),
+          'updatedAt': Timestamp.now(),
+        });
       });
     } catch (error) {
       debugPrint('Error updating study group: $error');

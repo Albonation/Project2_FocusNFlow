@@ -338,10 +338,8 @@ class StudySessionRepository {
   }) async {
     _validateSessionId(sessionId);
     _validateUserId(userId);
-
-    if (displayName.trim().isEmpty) {
-      throw Exception('Invalid display name.');
-    }
+    _validateDisplayName(displayName);
+    _validateEmail(email);
 
     await _firestore.runTransaction((transaction) async {
       final sessionRef = _sessionRef(sessionId);
@@ -395,11 +393,12 @@ class StudySessionRepository {
       }
 
       DocumentReference<Map<String, dynamic>>? roomRef;
-      DocumentSnapshot<Map<String, dynamic>>? roomDoc;
+      int? roomCurrentOccupancy;
+      int? roomCapacity;
 
       if (roomId != null && roomId.trim().isNotEmpty) {
         roomRef = _roomRef(roomId);
-        roomDoc = await transaction.get(roomRef);
+        final roomDoc = await transaction.get(roomRef);
 
         if (!roomDoc.exists) {
           throw Exception('The selected study room was not found.');
@@ -429,6 +428,9 @@ class StudySessionRepository {
         if (currentOccupancy >= capacity) {
           throw Exception('This study room is full.');
         }
+
+        roomCurrentOccupancy = currentOccupancy;
+        roomCapacity = capacity;
       }
 
       final participant = SessionParticipant(
@@ -451,16 +453,14 @@ class StudySessionRepository {
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
-      if (roomRef != null && roomDoc != null) {
-        final roomData = roomDoc.data() ?? {};
-        final currentOccupancy =
-            (roomData['currentOccupancy'] as num?)?.toInt() ?? 0;
-        final capacity = (roomData['capacity'] as num?)?.toInt() ?? 0;
-        final newOccupancy = currentOccupancy + 1;
+      if (roomRef != null &&
+          roomCurrentOccupancy != null &&
+          roomCapacity != null) {
+        final newOccupancy = roomCurrentOccupancy + 1;
 
         transaction.update(roomRef, {
           'currentOccupancy': newOccupancy,
-          'isFull': capacity > 0 && newOccupancy >= capacity,
+          'isFull': newOccupancy >= roomCapacity,
           'updatedAt': FieldValue.serverTimestamp(),
         });
       }
@@ -557,6 +557,18 @@ class StudySessionRepository {
   void _validateUserId(String userId) {
     if (userId.trim().isEmpty) {
       throw Exception('Invalid user.');
+    }
+  }
+
+  void _validateDisplayName(String displayName) {
+    if (displayName.trim().isEmpty) {
+      throw Exception('Invalid display name.');
+    }
+  }
+
+  void _validateEmail(String email) {
+    if (email.trim().isEmpty) {
+      throw Exception('Invalid email.');
     }
   }
 

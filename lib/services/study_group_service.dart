@@ -34,6 +34,21 @@ class StudyGroupService {
     return _repository.watchGroupMembers(groupId);
   }
 
+  //fetch all groups that the user belongs to
+  Future<Set<String>> getCurrentUserGroupIds() async {
+    final user = _currentUser;
+
+    final error = _runValidation([
+          () => _validateSignedIn(user, 'load your study groups'),
+    ]);
+
+    if (error != null) {
+      return {};
+    }
+
+    return _repository.getUserGroupIds(user!.uid);
+  }
+
   //check whether the current user is a member of a given group
   Future<bool> isCurrentUserMemberOfGroup(String groupId) async {
     final user = _currentUser;

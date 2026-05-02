@@ -62,6 +62,26 @@ class StudyGroupRepository {
     }
   }
 
+  //fetch all groups that the given user belongs to
+  Future<Set<String>> getUserGroupIds(String userId) async {
+    try {
+      _validateUserId(userId);
+
+      final isMemberOfSnapshot = await _firestore
+          .collectionGroup('members')
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      return isMemberOfSnapshot.docs
+          .map((doc) => doc.reference.parent.parent?.id)
+          .whereType<String>()
+          .toSet();
+    } catch (error) {
+      debugPrint('Error getting user group ids: $error');
+      rethrow;
+    }
+  }
+
   //check if a given user is a member of a given group
   Future<bool> isUserMemberOfGroup({
     required String groupId,

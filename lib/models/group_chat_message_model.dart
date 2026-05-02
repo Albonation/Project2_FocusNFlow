@@ -7,7 +7,7 @@ class GroupChatMessage {
   static const String systemType = 'system';
 
   final String id;
-  final String groupId;//mainly for local usage, not sent to firestore
+  final String groupId; //mainly for local usage, not sent to firestore
   final String senderId;
   final String senderName;
   final String text;
@@ -29,7 +29,7 @@ class GroupChatMessage {
   });
 
   factory GroupChatMessage.fromFirestore({
-    required String groupId,//for local usage
+    required String groupId, //for local usage
     required DocumentSnapshot<Map<String, dynamic>> doc,
   }) {
     final data = doc.data() ?? {};

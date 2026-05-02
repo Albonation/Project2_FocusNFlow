@@ -5,9 +5,8 @@ import '../models/group_chat_message_model.dart';
 class GroupChatRepository {
   final FirebaseFirestore _firestore;
 
-  GroupChatRepository({
-    FirebaseFirestore? firestore,
-  }) : _firestore = firestore ?? FirebaseFirestore.instance;
+  GroupChatRepository({FirebaseFirestore? firestore})
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   CollectionReference<Map<String, dynamic>> get _groupsRef {
     return _firestore.collection('study_groups');
@@ -27,14 +26,12 @@ class GroupChatRepository {
         .snapshots()
         .map(
           (snapshot) => snapshot.docs
-          .map(
-            (doc) => GroupChatMessage.fromFirestore(
-          groupId: groupId,
-          doc: doc,
-        ),
-      )
-          .toList(),
-    );
+              .map(
+                (doc) =>
+                    GroupChatMessage.fromFirestore(groupId: groupId, doc: doc),
+              )
+              .toList(),
+        );
   }
 
   //send a new message to a study group's messages subcollection
@@ -86,10 +83,7 @@ class GroupChatRepository {
           doc: messageSnapshot,
         );
 
-        _validateMessageBelongsToGroup(
-          groupId: groupId,
-          message: message,
-        );
+        _validateMessageBelongsToGroup(groupId: groupId, message: message);
 
         if (message.senderId != userId) {
           throw Exception('You can only delete your own messages.');

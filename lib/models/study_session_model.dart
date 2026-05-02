@@ -127,7 +127,8 @@ class StudySession {
     };
   }
 
-  //to prevent overwriting some fields that really should be immutable
+  //to prevent overwriting something that really should be immutable
+  //intentionally excludes some fields
   Map<String, dynamic> toUpdateFirestore() {
     return {
       'title': title,

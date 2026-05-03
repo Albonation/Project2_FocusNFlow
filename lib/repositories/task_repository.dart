@@ -4,6 +4,7 @@
 //importing necessary packages
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:focus_n_flow/repositories/planner_firesto_repository.dart';
 import '../models/task_model.dart';
 
 class TaskRepository {
@@ -119,17 +120,11 @@ class TaskRepository {
   }) async {
     final now = Timestamp.now();
 
-    try {
-      await _tasksCollection(userId).doc(taskId).update({
-        'status': TaskStatus.completed.value,
-        'completed_at': now,
-        'updated_at': now,
-      });
-      debugPrint('[TASK_REPO] Marked task as completed: $taskId');
-    } catch (e) {
-      debugPrint('[TASK_REPO] Failed to mark task $taskId as completed: $e');
-      rethrow;
-    }
+    await _tasksCollection(userId).doc(taskId).update({
+      'status': TaskStatus.completed.value,
+      'completed_at': now,
+      'updated_at': now,
+    });
   }
 
   //mark a task as in progress

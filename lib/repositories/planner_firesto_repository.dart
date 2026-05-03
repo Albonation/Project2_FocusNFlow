@@ -6,7 +6,8 @@ class PlannerFirestoreRepository {
   Future<void> savePlan(
     String uid,
     DateTime weekStart,
-    List<PlannedTask> plan) async {
+    List<PlannedTask> plan,
+  ) async {
 
     final weekId = DateTime(
       weekStart.year,
@@ -14,17 +15,22 @@ class PlannerFirestoreRepository {
       weekStart.day,
     ).toIso8601String();
 
-    final ref = FirebaseFirestore.instance
+    final weekRef = FirebaseFirestore.instance
         .collection('users')
         .doc(uid)
         .collection('weekly_plans')
         .doc(weekId)
         .collection('planned_tasks');
 
+    final old = await weekRef.get();
+    for (final doc in old.docs) {
+      await doc.reference.delete();
+    }
+
     final batch = FirebaseFirestore.instance.batch();
 
     for (final task in plan) {
-      final docRef = ref.doc(); // generate ID once
+      final docRef = weekRef.doc();
 
       batch.set(docRef, task.toMap());
     }
@@ -55,14 +61,40 @@ class PlannerFirestoreRepository {
             final data = doc.data();
 
             return PlannedTask(
-              id: doc.id,
               taskId: data['task_id'],
+              title: data['title'],
+              courseId: data['course_id'],
               date: (data['date'] as Timestamp).toDate(),
               unitIndex: data['unit_index'],
-              weekStart: (data['week_start'] as Timestamp).toDate(),
             );
           }).toList();
         });
+  }
+
+  
+
+  Future<void> removeTaskFromWeeklyPlans({
+    required String userId,
+    required String taskId,
+  }) async {
+    final weeksRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('weekly_plans');
+
+    final weeks = await weeksRef.get();
+
+    for (final weekDoc in weeks.docs) {
+      final tasksRef = weekDoc.reference.collection('planned_tasks');
+
+      final snapshot = await tasksRef
+          .where('task_id', isEqualTo: taskId)
+          .get();
+
+      for (final doc in snapshot.docs) {
+        await doc.reference.delete();
+      }
+    }
   }
 
   Future<void> clearWeekPlan(String uid, DateTime weekStart) async {

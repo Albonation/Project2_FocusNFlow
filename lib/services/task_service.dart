@@ -1,13 +1,22 @@
 //whether a task can be completed, completing a task, validating task data
 //essentially the rules and logic for the task system
 //importing necessarry packages
+import 'package:focus_n_flow/services/planner_engine.dart';
+
 import '../models/task_model.dart';
 import '../repositories/task_repository.dart';
+import '../repositories/planner_firesto_repository.dart';
 
 class TaskService {
   final TaskRepository taskRepository;
+  final PlannerFirestoreRepository plannerRepository;
 
-  TaskService({required this.taskRepository});
+  TaskService({
+    required this.taskRepository,
+    required this.plannerRepository
+    
+  });
+
 
   //create a new task after validating all the necessary fields
   Future<TaskActionResult> createTask(Task task) async {
@@ -38,31 +47,38 @@ class TaskService {
 
   //complete a task if it can be completed and passes validation
   Future<TaskActionResult> completeTask(Task task) async {
-    final error = runValidation([
-      () => validateTaskId(task.id),
-      () => validateUserId(task.userId),
-      () => canCompleteTask(task),
-    ]);
+  final error = runValidation([
+    () => validateTaskId(task.id),
+    () => validateUserId(task.userId),
+    () => canCompleteTask(task),
+  ]);
 
-    if (error != null) {
-      return failureResult(task, error);
-    }
-
-    await taskRepository.markTaskCompleted(
-      userId: task.userId,
-      taskId: task.id!,
-    );
-
-    final now = DateTime.now(); //so they match
-    final updatedTask = task.copyWith(
-      status: TaskStatus.completed,
-      completedAt: now,
-      updatedAt: now,
-    );
-
-    return successResult(updatedTask, 'Task marked as completed');
+  if (error != null) {
+    return failureResult(task, error);
   }
 
+  // 1. Update task
+  await taskRepository.markTaskCompleted(
+    userId: task.userId,
+    taskId: task.id!,
+  );
+
+  // 2. Remove from planner
+  await plannerRepository.removeTaskFromWeeklyPlans(
+    userId: task.userId,
+    taskId: task.id!,
+  );
+
+  final now = DateTime.now();
+
+  final updatedTask = task.copyWith(
+    status: TaskStatus.completed,
+    completedAt: now,
+    updatedAt: now,
+  );
+
+  return successResult(updatedTask, 'Task marked as completed');
+}
   //update a task after passing validation checks
   Future<TaskActionResult> saveTaskChanges(Task task) async {
     final error = runValidation([
@@ -174,14 +190,14 @@ class TaskService {
   }
 
   String? canCompleteTask(Task task) {
-    if (task.isCompleted) {
+    if (task.status == TaskStatus.completed) {
       return 'Task is already completed.';
     }
     return null;
   }
 
   String? canReopenTask(Task task) {
-    if (!task.isCompleted) {
+    if (task.status != TaskStatus.completed) {
       return 'Only completed tasks can be reopened.';
     }
     return null;

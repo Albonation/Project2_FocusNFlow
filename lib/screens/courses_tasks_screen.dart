@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:focus_n_flow/repositories/planner_firesto_repository.dart';
 import 'package:focus_n_flow/repositories/task_repository.dart';
 import 'package:focus_n_flow/models/task_model.dart';
 import 'package:focus_n_flow/screens/add_edit_task_screen.dart';
@@ -21,7 +22,10 @@ class _CoursesTasksScreenState extends State<CoursesTasksScreen> {
   @override
   void initState() {
     super.initState();
-    _taskService = TaskService(taskRepository: _taskRepository);
+    _taskService = TaskService(
+      taskRepository: _taskRepository,
+      plannerRepository: PlannerFirestoreRepository(),
+    );
   }
 
   Future<void> _deleteTask(Task task) async {
@@ -41,6 +45,25 @@ class _CoursesTasksScreenState extends State<CoursesTasksScreen> {
       ).showSnackBar(SnackBar(content: Text('Failed to delete task: $e')));
     }
   }
+
+  Future<void> _toggleTask(Task task) async {
+  try {
+    if (task.status == TaskStatus.completed) {
+      final result = await _taskService.reopenTask(task);
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(result.message)));
+    } else {
+      final result = await _taskService.completeTask(task);
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(result.message)));
+    }
+  } catch (e) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text('Failed: $e')));
+  }
+}
 
   void _showDeleteDialog(Task task) {
     showDialog(
@@ -159,6 +182,7 @@ class _CoursesTasksScreenState extends State<CoursesTasksScreen> {
                 padding: AppSpacing.rowPadding,
                 child: _TaskListCard(
                   task: task,
+                  onToggleComplete: () => _toggleTask(task),
                   onEdit: () => _openEditTaskScreen(task),
                   onDelete: () => _showDeleteDialog(task),
                 ),
@@ -179,28 +203,37 @@ class _TaskListCard extends StatelessWidget {
   final Task task;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onToggleComplete;
 
   const _TaskListCard({
     required this.task,
     required this.onEdit,
     required this.onDelete,
+    required this.onToggleComplete,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isCompleted = task.isCompleted;
+    final isCompleted = task.status == TaskStatus.completed;
     final hasDescription = task.description.trim().isNotEmpty;
 
     return Card(
       margin: EdgeInsets.zero,
       child: ListTile(
         contentPadding: AppSpacing.listTilePadding,
-        leading: Icon(
-          isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
-          color: isCompleted
-              ? context.appColors.success
-              : context.colors.onSurfaceVariant,
+
+        leading: IconButton(
+          icon: Icon(
+            isCompleted
+                ? Icons.check_circle
+                : Icons.radio_button_unchecked,
+            color: isCompleted
+                ? context.appColors.success
+                : context.colors.onSurfaceVariant,
+          ),
+          onPressed: onToggleComplete,
         ),
+
         title: Text(
           task.title,
           style: context.text.titleMedium?.copyWith(
@@ -213,14 +246,18 @@ class _TaskListCard extends StatelessWidget {
                 : context.colors.onSurface,
           ),
         ),
+
         subtitle: Text(
-          hasDescription ? task.description : 'Due: ${task.deadline.toLocal()}',
+          hasDescription
+              ? task.description
+              : 'Due: ${task.deadline.toLocal()}',
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: context.text.bodySmall?.copyWith(
             color: context.colors.onSurfaceVariant,
           ),
         ),
+
         trailing: PopupMenuButton<String>(
           iconColor: context.colors.onSurfaceVariant,
           onSelected: (value) {
@@ -233,7 +270,10 @@ class _TaskListCard extends StatelessWidget {
             }
           },
           itemBuilder: (context) => [
-            const PopupMenuItem(value: 'edit', child: Text('Edit')),
+            const PopupMenuItem(
+              value: 'edit',
+              child: Text('Edit'),
+            ),
             PopupMenuItem(
               value: 'delete',
               child: Text(

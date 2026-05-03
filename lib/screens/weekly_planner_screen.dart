@@ -1,12 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:focus_n_flow/models/planned_task_model.dart';
-import 'package:focus_n_flow/models/task_model.dart';
-import 'package:focus_n_flow/repositories/planner_firesto_repository.dart';
 import 'package:focus_n_flow/repositories/task_repository.dart';
 import 'package:focus_n_flow/services/planner_engine.dart';
 import 'package:focus_n_flow/services/planner_service.dart';
 import 'package:focus_n_flow/widgets/weekly_planner_widgets/day_section.dart';
+import 'package:focus_n_flow/widgets/weekly_planner_widgets/planner_overview.dart';
 
 class WeeklyPlanScreen extends StatefulWidget {
   const WeeklyPlanScreen({super.key});
@@ -16,38 +15,19 @@ class WeeklyPlanScreen extends StatefulWidget {
 }
 
 class _WeeklyPlanScreenState extends State<WeeklyPlanScreen> {
-  late final PlannerController controller;
-  Map<String, Task> taskMap = {};
-  bool _initialized = false;
+  late final PlannerService plannerService;
+  late final TaskRepository taskRepository;
 
   @override
   void initState() {
     super.initState();
 
-    controller = PlannerController(
+    taskRepository = TaskRepository();
+
+    plannerService = PlannerService(
+      taskRepository: taskRepository,
       engine: PlannerEngine(),
-      firestore: PlannerFirestoreRepository(),
     );
-
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (_initialized) return;
-      _initialized = true;
-
-      final uid = FirebaseAuth.instance.currentUser!.uid;
-      final weekStart = _normalize(DateTime.now());
-
-      final tasks = await TaskRepository()
-          .getTasksForUser(uid)
-          .first;
-
-      if (tasks.isEmpty) return;
-
-      taskMap = {for (var t in tasks) t.id!: t};
-
-      await controller.generateAndSavePlan(uid, tasks, weekStart);
-
-      setState(() {});
-    });
   }
 
   DateTime _normalize(DateTime d) =>
@@ -62,7 +42,7 @@ class _WeeklyPlanScreenState extends State<WeeklyPlanScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text("Weekly Plan")),
       body: StreamBuilder<List<PlannedTask>>(
-        stream: controller.firestore.getWeeklyPlan(uid, weekStart),
+        stream: plannerService.watchWeeklyPlan(uid, weekStart),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
@@ -79,18 +59,25 @@ class _WeeklyPlanScreenState extends State<WeeklyPlanScreen> {
             (i) => today.add(Duration(days: i)),
           );
 
-          return ListView(
-            children: week.map((day) {
-              final tasksForDay = plan
-                  .where((p) => _normalize(p.date) == _normalize(day))
-                  .toList();
+          return Column(
+            children: [
+              PlannerOverviewCard(),
 
-              return DaySection(
-                date: day,
-                tasks: tasksForDay,
-                taskMap: taskMap,
-              );
-            }).toList(),
+              Expanded(
+                child: ListView(
+                  children: week.map((day) {
+                    final tasksForDay = plan
+                        .where((p) => _normalize(p.date) == _normalize(day))
+                        .toList();
+
+                    return DaySection(
+                      date: day,
+                      tasks: tasksForDay,
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
           );
         },
       ),

@@ -4,7 +4,7 @@ import '../repositories/course_repository.dart';
 class CourseService {
   final CourseRepository courseRepository;
 
-  CourseService({required this.courseRepository});
+  CourseService({required CourseRepository repository}) : courseRepository = repository;
 
   //create a new course after validating all the necessary fields
   Future<CourseActionResult> createCourse(Course course) async {

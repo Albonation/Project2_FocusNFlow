@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:focus_n_flow/models/course_model.dart';
 import 'package:focus_n_flow/models/task_model.dart';
 import 'package:focus_n_flow/repositories/course_repository.dart';
+import 'package:focus_n_flow/repositories/planner_firesto_repository.dart';
 import 'package:focus_n_flow/repositories/task_repository.dart';
 import 'package:focus_n_flow/services/task_service.dart';
 import 'package:focus_n_flow/theme/app_spacing.dart';
@@ -20,6 +21,7 @@ class AddEditTask extends StatefulWidget {
 class _AddEditTaskFormState extends State<AddEditTask> {
   final TaskService _taskService = TaskService(
     taskRepository: TaskRepository(),
+    plannerRepository: PlannerFirestoreRepository(),
   );
 
   final CourseRepository _courseRepository = CourseRepository();

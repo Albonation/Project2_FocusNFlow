@@ -21,18 +21,21 @@ class PlannerEngine {
     final plan = <PlannedTask>[];
 
     for (final task in tasks) {
-      final totalUnits = task.estimatedHours.ceil();
+    
+      if (task.status == TaskStatus.completed) continue;
 
-      for (int i = 0; i < totalUnits; i++) {
+      final total = task.estimatedHours.ceil();
+
+      for (int i = 0; i < total; i++) {
         final day = week[i % 7];
 
         plan.add(
           PlannedTask(
-            id: '',
             taskId: task.id!,
+            title: task.title,
+            courseId: task.courseId,
             date: day,
             unitIndex: i,
-            weekStart: weekStart,
           ),
         );
       }

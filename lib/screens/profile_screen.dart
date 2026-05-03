@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:focus_n_flow/models/course_model.dart';
 import 'package:focus_n_flow/repositories/course_repository.dart';
 import 'package:focus_n_flow/services/course_service.dart';
 import 'package:focus_n_flow/services/profile_service.dart';
 import 'package:focus_n_flow/theme/app_spacing.dart';
-import 'package:focus_n_flow/theme/app_theme_extensions.dart';
 import 'package:focus_n_flow/theme/theme_controller.dart';
 import 'package:focus_n_flow/widgets/profile_widgets/appearance_section.dart';
 import 'package:focus_n_flow/widgets/profile_widgets/course_list_section.dart';
@@ -31,10 +31,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
 
-<<<<<<< HEAD
     _courseService = CourseService(
-      courseRepository: _courseRepository,
-=======
+      repository: _courseRepository,
+    );
+
+    _profileService = ProfileService(
+      courseService: _courseService);
+  }
+
   Future<void> _showAddCourseDialog(String userId) async {
     final courseCodeController = TextEditingController();
     final courseNameController = TextEditingController();
@@ -46,66 +50,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: Text(
-                'Add Course',
-                style: context.text.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              title: const Text('Add Course'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     controller: courseCodeController,
-                    keyboardType: TextInputType.text,
-                    textCapitalization: TextCapitalization.characters,
-                    onChanged: (value) {
-                      final upper = value.toUpperCase();
-
-                      courseCodeController.value = TextEditingValue(
-                        text: upper,
-                        selection: TextSelection.collapsed(
-                          offset: upper.length,
-                        ),
-                      );
-                    },
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
-                      LengthLimitingTextInputFormatter(8),
-                    ],
                     decoration: const InputDecoration(
                       labelText: 'Course Code',
-                      hintText: 'ECON2002',
                     ),
                   ),
-
                   AppSpacing.gapMd,
-
                   TextField(
                     controller: courseNameController,
                     decoration: const InputDecoration(
                       labelText: 'Course Name',
-                      hintText: 'Economics',
                     ),
                   ),
-
                   AppSpacing.gapMd,
-
                   DropdownButtonFormField<double>(
                     initialValue: selectedWeight,
-                    decoration: const InputDecoration(
-                      labelText: 'Course Weight',
-                    ),
                     items: const [
-                      DropdownMenuItem(value: 1, child: Text('1 - Low')),
+                      DropdownMenuItem(value: 1, child: Text('1')),
                       DropdownMenuItem(value: 2, child: Text('2')),
-                      DropdownMenuItem(value: 3, child: Text('3 - Normal')),
+                      DropdownMenuItem(value: 3, child: Text('3')),
                       DropdownMenuItem(value: 4, child: Text('4')),
-                      DropdownMenuItem(value: 5, child: Text('5 - High')),
+                      DropdownMenuItem(value: 5, child: Text('5')),
                     ],
                     onChanged: (value) {
                       if (value == null) return;
-
                       setDialogState(() {
                         selectedWeight = value;
                       });
@@ -115,9 +88,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               actions: [
                 TextButton(
-                  onPressed: () {
-                    Navigator.pop(dialogContext);
-                  },
+                  onPressed: () => Navigator.pop(dialogContext),
                   child: const Text('Cancel'),
                 ),
                 TextButton(
@@ -130,36 +101,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     );
 
                     try {
-                      final result = await _courseService.createCourse(course);
+                      final result =
+                          await _courseService.createCourse(course);
 
                       if (!dialogContext.mounted) return;
 
                       Navigator.pop(dialogContext);
-
                       _showMessage(result.message);
                     } catch (e) {
-                      if (!mounted) return;
-                      _showMessage('Failed to add course: $e');
+                      _showMessage('Failed: $e');
                     }
                   },
-                  child: Text(
-                    'Add',
-                    style: TextStyle(
-                      color: context.appColors.brand,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  child: const Text('Add'),
                 ),
               ],
             );
           },
         );
       },
->>>>>>> 395a2b3895544a3c6f29a3e6fa309187f6e97e12
     );
+  }
 
-    _profileService = ProfileService(
-      courseService: _courseService,
+  void _showMessage(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg)),
     );
   }
 
@@ -168,41 +133,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
-      return Scaffold(
-        body: Center(
-          child: Padding(
-            padding: AppSpacing.screen,
-            child: Text(
-              'No user logged in.',
-              style: context.text.bodyLarge,
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ),
+      return const Scaffold(
+        body: Center(child: Text('No user logged in')),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profile'),
-      ),
+      appBar: AppBar(title: const Text('Profile')),
       body: ListView(
         padding: AppSpacing.screen,
         children: [
           AppearanceSection(
             themeController: widget.themeController,
           ),
-
           AppSpacing.gapXxl,
-
           CourseListSection(
             userId: user.uid,
             repository: _courseRepository,
             profileService: _profileService,
           ),
-
           AppSpacing.gapXxl,
-
           const LogoutButton(),
         ],
       ),

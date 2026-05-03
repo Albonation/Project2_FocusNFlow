@@ -1,29 +1,29 @@
-import 'package:flutter/material.dart';
+import 'package:focus_n_flow/models/planned_task_model.dart';
 import 'package:focus_n_flow/models/task_model.dart';
-import 'package:focus_n_flow/repositories/planner_firesto_repository.dart';
-import 'package:focus_n_flow/services/planner_engine.dart';
+import 'package:focus_n_flow/repositories/task_repository.dart';
+import 'planner_engine.dart';
 
-class PlannerController extends ChangeNotifier {
+class PlannerService {
+  final TaskRepository taskRepository;
   final PlannerEngine engine;
-  final PlannerFirestoreRepository firestore;
 
-  PlannerController({
+  PlannerService({
+    required this.taskRepository,
     required this.engine,
-    required this.firestore,
   });
 
-  Future<void> generateAndSavePlan(
-    String uid,
-    List<Task> tasks,
+  Stream<List<PlannedTask>> watchWeeklyPlan(
+    String userId,
     DateTime weekStart,
-  ) async {
-    final plan = engine.generateWeeklyPlan(
-      tasks: tasks,
-      weekStart: weekStart,
-    );
+  ) {
+    return taskRepository.getTasksForUser(userId).map((tasks) {
+      final activeTasks =
+          tasks.where((t) => t.status != TaskStatus.completed).toList();
 
-    await firestore.clearWeekPlan(uid, weekStart);
-    await firestore.savePlan(uid, weekStart, plan);
-
+      return engine.generateWeeklyPlan(
+        tasks: activeTasks,
+        weekStart: weekStart,
+      );
+    });
   }
 }

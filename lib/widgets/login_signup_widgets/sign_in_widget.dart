@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../screens/sign_up_screen.dart';
+import 'package:focus_n_flow/theme/app_spacing.dart';
+import 'package:focus_n_flow/theme/app_theme_extensions.dart';
 
 class SignInForm extends StatelessWidget {
   final TextEditingController emailController;
@@ -18,57 +20,52 @@ class SignInForm extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const SizedBox(height: 40),
+        AppSpacing.gapXl,
 
         TextField(
           controller: emailController,
+          keyboardType: TextInputType.emailAddress,
           decoration: InputDecoration(
             labelText: "Email",
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            hintText: 'you@student.gsu.edu',
+            prefixIcon: Icon(Icons.email_outlined),
           ),
         ),
 
-        const SizedBox(height: 20),
+        AppSpacing.gapLg,
 
         TextField(
           controller: passwordController,
           obscureText: true,
           decoration: InputDecoration(
             labelText: "Password",
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            prefixIcon: Icon(Icons.lock_outline),
           ),
         ),
 
-        const SizedBox(height: 30),
+        AppSpacing.gapXl,
 
         SizedBox(
           width: double.infinity,
-          height: 50,
-          child: ElevatedButton(
-            onPressed: login,
-            child: const Text(
-              "Login",
-              style: TextStyle(fontSize: 18),
-            ),
-          ),
+          child: ElevatedButton(onPressed: login, child: const Text("Login")),
         ),
 
-        const SizedBox(height: 16),
+        AppSpacing.gapLg,
 
         TextButton(
           onPressed: () {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(
-                builder: (context) => const SignUpScreen(),
-              ),
+              MaterialPageRoute(builder: (context) => const SignUpScreen()),
             );
           },
-          child: const Text("Don't have an account? Sign Up"),
+          child: Text(
+            "Don't have an account? Sign Up",
+            style: context.text.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: context.appColors.brand,
+            ),
+          ),
         ),
       ],
     );

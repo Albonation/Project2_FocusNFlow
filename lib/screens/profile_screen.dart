@@ -17,15 +17,9 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  String _themeModeLabel(ThemeMode mode) {
-    switch (mode) {
-      case ThemeMode.system:
-        return 'System';
-      case ThemeMode.light:
-        return 'Light';
-      case ThemeMode.dark:
-        return 'Dark';
-    }
+
+  Future<void> _logout() async {
+    await FirebaseAuth.instance.signOut();
   }
 
   @override
@@ -33,45 +27,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
-      return const Scaffold(
-        body: Center(child: Text('No user logged in')),
-      );
+      return const Center(child: Text('No user logged in'));
     }
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
-      body: ListView(
-        padding: AppSpacing.screen,
-        children: [
-          AppearanceSection(
-            themeController: widget.themeController,
-          ),
+    return ListView(
+      padding: AppSpacing.screen,
+      children: [
+        AppearanceSection(
+          themeController: widget.themeController,
+        ),
 
-          AppSpacing.gapMd,
+        AppSpacing.gapLg,
 
-          AnimatedBuilder(
-            animation: widget.themeController,
-            builder: (context, _) {
-              return DropdownButtonFormField<ThemeMode>(
-                initialValue: widget.themeController.themeMode,
-                decoration: const InputDecoration(
-                  labelText: 'Theme Mode',
-                ),
-                items: ThemeMode.values.map((mode) {
-                  return DropdownMenuItem<ThemeMode>(
-                    value: mode,
-                    child: Text(_themeModeLabel(mode)),
-                  );
-                }).toList(),
-                onChanged: (mode) async {
-                  if (mode == null) return;
-                  await widget.themeController.setTheme(mode);
-                },
-              );
-            },
+        ElevatedButton.icon(
+          onPressed: _logout,
+          icon: const Icon(Icons.logout),
+          label: const Text('Log Out'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red,
+            foregroundColor: Colors.white,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

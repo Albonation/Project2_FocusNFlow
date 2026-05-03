@@ -4,6 +4,7 @@ import 'package:focus_n_flow/screens/courses_tasks_screen.dart';
 import 'package:focus_n_flow/screens/profile_screen.dart';
 import 'package:focus_n_flow/screens/student_dashboard_screen.dart';
 import 'package:focus_n_flow/screens/groups_screen.dart';
+import 'package:focus_n_flow/services/notification_service.dart';
 import '../theme/theme_controller.dart';
 
 class AppShell extends StatefulWidget {
@@ -19,10 +20,12 @@ class _AppShellState extends State<AppShell> {
   int _selectedIndex = 0;
 
   late final List<Widget> _screens;
+  final NotificationService _notificationService = NotificationService();
 
   @override
   void initState() {
     super.initState();
+    _notificationService.initialize();
     //Unfinished screens commented out for testing
     _screens = [
       StudentDashboardScreen(),

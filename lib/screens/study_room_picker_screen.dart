@@ -110,7 +110,7 @@ class _StudyRoomPickerScreenState extends State<StudyRoomPickerScreen> {
                     : ListView.separated(
                   padding: AppSpacing.screen,
                   itemCount: filteredRooms.length,
-                  separatorBuilder: (_, __) => AppSpacing.gapMd,
+                  separatorBuilder: (_, _) => AppSpacing.gapMd,
                   itemBuilder: (context, index) {
                     final room = filteredRooms[index];
 

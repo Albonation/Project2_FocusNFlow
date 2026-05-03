@@ -86,6 +86,26 @@ class StudySessionRepository {
         });
   }
 
+  //adding this method to allow for viewing upcoming study sessions on dashboard
+  Stream<List<StudySession>> watchUpcomingScheduledSessions({
+    required DateTime startsAfter,
+    required DateTime startsBefore,
+  }) {
+    return _sessionsRef
+        .where('isActive', isEqualTo: true)
+        .where('status', isEqualTo: StudySessionStatus.scheduled.value)
+        .where(
+          'startsAt',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(startsAfter),
+        )
+        .where('startsAt', isLessThan: Timestamp.fromDate(startsBefore))
+        .orderBy('startsAt')
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map(StudySession.fromFirestore).toList();
+        });
+  }
+
   Future<bool> isUserGroupMember({
     required String groupId,
     required String userId,

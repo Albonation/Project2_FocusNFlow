@@ -26,6 +26,39 @@ class StudySessionService {
     return _repository.watchParticipants(sessionId);
   }
 
+  //adding this method to view upcoming study sessions on dashboard
+  Stream<List<StudySession>> watchUpcomingScheduledSessionsForCurrentUser({
+    int daysAhead = 2,
+  }) {
+    final user = _currentUser;
+
+    if (user == null) {
+      return Stream.value([]);
+    }
+
+    final now = DateTime.now();
+    final end = now.add(Duration(days: daysAhead));
+
+    return _repository
+        .watchUpcomingScheduledSessions(startsAfter: now, startsBefore: end)
+        .asyncMap((sessions) async {
+          final visibleSessions = <StudySession>[];
+
+          for (final session in sessions) {
+            final isMember = await _repository.isUserGroupMember(
+              groupId: session.groupId,
+              userId: user.uid,
+            );
+
+            if (isMember) {
+              visibleSessions.add(session);
+            }
+          }
+
+          return visibleSessions;
+        });
+  }
+
   Future<List<StudySession>> getOverlappingRoomSessions({
     required String roomId,
     required DateTime startsAt,

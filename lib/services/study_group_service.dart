@@ -34,6 +34,21 @@ class StudyGroupService {
     return _repository.watchGroupMembers(groupId);
   }
 
+  //fetch a group by the groupId, added for studdy sessions on dashboard
+  Future<StudyGroup?> getGroupById(String groupId) async {
+    final error = _validateGroupId(groupId);
+
+    if (error != null) {
+      return null;
+    }
+
+    try {
+      return await _repository.getGroupById(groupId);
+    } catch (error) {
+      return null;
+    }
+  }
+
   //fetch all groups that the user belongs to
   Future<Set<String>> getCurrentUserGroupIds() async {
     final user = _currentUser;

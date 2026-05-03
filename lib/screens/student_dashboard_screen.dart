@@ -66,12 +66,11 @@ class _StudentDashboardState extends State<StudentDashboardScreen> {
         padding: AppSpacing.tile,
         child: Column(
           children: [
-            Tasks(stream: taskStream),
-            AppSpacing.gapXl,
-            const UpcomingStudySessions(),
-            AppSpacing.gapXl,
             ProgressSummary(stream: taskStream),
             AppSpacing.gapXl,
+            UpcomingStudySessions(),
+            AppSpacing.gapXl,
+            Tasks(stream: taskStream),
           ],
         ),
       ),

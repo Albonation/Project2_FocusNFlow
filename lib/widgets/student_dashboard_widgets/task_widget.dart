@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-
-//import 'package:firebase_auth/firebase_auth.dart';
 import 'package:focus_n_flow/models/task_model.dart';
 import 'package:focus_n_flow/theme/app_corners.dart';
 import 'package:focus_n_flow/theme/app_spacing.dart';
@@ -25,130 +23,332 @@ class Tasks extends StatelessWidget {
     return StreamBuilder<List<Task>>(
       stream: stream,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
+          return const LinearProgressIndicator();
         }
 
         if (snapshot.hasError) {
-          return Center(
-            child: Text(
-              'Something went wrong loading tasks',
-              style: context.text.bodyMedium?.copyWith(
-                color: context.colors.error,
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const _TasksHeader(),
+              AppSpacing.gapSm,
+              const Divider(),
+              AppSpacing.gapSm,
+              Text(
+                'Something went wrong loading tasks',
+                style: context.text.bodyMedium?.copyWith(
+                  color: context.colors.error,
+                ),
               ),
-            ),
+            ],
           );
         }
 
         final tasks = snapshot.data ?? [];
         final todaysTasks = tasks.where(_isDueToday).toList();
 
-        if (todaysTasks.isEmpty) {
-          return Card(
-            margin: AppSpacing.cardMargin,
-            child: Padding(
-              padding: AppSpacing.card,
-              child: Text('No tasks due today', style: context.text.bodyMedium),
-            ),
-          );
-        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _TasksHeader(),
 
-        return Card(
-          margin: AppSpacing.cardMargin,
-          child: Padding(
-            padding: AppSpacing.card,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Today's Tasks",
-                  style: context.text.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+            AppSpacing.gapSm,
+
+            const Divider(),
+
+            AppSpacing.gapSm,
+
+            if (todaysTasks.isEmpty)
+              Text(
+                'No tasks due today',
+                style: context.text.bodyMedium?.copyWith(
+                  color: context.colors.onSurfaceVariant,
                 ),
-
-                AppSpacing.gapMd,
-
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: todaysTasks.length,
-                  itemBuilder: (context, index) {
-                    final task = todaysTasks[index];
-
-                    return Padding(
-                      padding: AppSpacing.rowPadding,
-                      child: _TaskDashboardRow(task: task),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
+              )
+            else
+              Column(
+                children: todaysTasks.map((task) {
+                  return Padding(
+                    padding: AppSpacing.rowPadding,
+                    child: _TaskDashboardCard(task: task),
+                  );
+                }).toList(),
+              ),
+          ],
         );
       },
     );
   }
 }
 
-class _TaskDashboardRow extends StatelessWidget {
+class _TasksHeader extends StatelessWidget {
+  const _TasksHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(Icons.task_alt_outlined, color: context.appColors.task),
+
+        AppSpacing.horizontalGapSm,
+
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Today's Tasks",
+                style: context.text.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              AppSpacing.gapXs,
+
+              Text(
+                'Tasks with deadlines today',
+                style: context.text.bodySmall?.copyWith(
+                  color: context.colors.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TaskDashboardCard extends StatelessWidget {
   final Task task;
 
-  const _TaskDashboardRow({required this.task});
+  const _TaskDashboardCard({required this.task});
 
   @override
   Widget build(BuildContext context) {
     final isCompleted = task.isCompleted;
+    final statusColor = _statusColor(context, task);
+    final hasDescription = task.description.trim().isNotEmpty;
 
+    return Card(
+      margin: EdgeInsets.zero,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppCorners.lg),
+        onTap: () {
+          //##TODO wire up features for tapping on tasks on dashboard
+          //maybe features to delete, change state, complete
+        },
+        child: Padding(
+          padding: AppSpacing.compactTilePadding,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(_statusIcon(task), color: statusColor),
+
+              AppSpacing.horizontalGapMd,
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      task.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.text.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        decoration: isCompleted
+                            ? TextDecoration.lineThrough
+                            : TextDecoration.none,
+                        color: isCompleted
+                            ? context.colors.onSurfaceVariant
+                            : context.colors.onSurface,
+                      ),
+                    ),
+
+                    if (hasDescription) ...[
+                      AppSpacing.gapXs,
+                      Text(
+                        task.description,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.text.bodySmall?.copyWith(
+                          color: context.colors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+
+                    AppSpacing.gapSm,
+
+                    Row(
+                      children: [
+                        _StatusBadge(
+                          label: _statusLabel(task),
+                          icon: _statusIcon(task),
+                          color: statusColor,
+                        ),
+
+                        AppSpacing.horizontalGapSm,
+
+                        _ImportanceBadge(task: task),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              AppSpacing.horizontalGapSm,
+
+              _DeadlineBadge(deadline: task.deadline),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  IconData _statusIcon(Task task) {
+    switch (task.status) {
+      case TaskStatus.pending:
+        return Icons.radio_button_unchecked;
+      case TaskStatus.inProgress:
+        return Icons.timelapse;
+      case TaskStatus.completed:
+        return Icons.check_circle;
+    }
+  }
+
+  String _statusLabel(Task task) {
+    switch (task.status) {
+      case TaskStatus.pending:
+        return 'Pending';
+      case TaskStatus.inProgress:
+        return 'In Progress';
+      case TaskStatus.completed:
+        return 'Completed';
+    }
+  }
+
+  Color _statusColor(BuildContext context, Task task) {
+    switch (task.status) {
+      case TaskStatus.pending:
+        return context.colors.onSurfaceVariant;
+      case TaskStatus.inProgress:
+        return context.appColors.planner;
+      case TaskStatus.completed:
+        return context.appColors.success;
+    }
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+
+  const _StatusBadge({
+    required this.label,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: AppSpacing.compactTilePadding,
+      padding: AppSpacing.badge,
       decoration: BoxDecoration(
-        color: context.appColors.surfaceMuted,
-        border: Border.all(color: context.appColors.cardBorder),
-        borderRadius: BorderRadius.circular(AppCorners.md),
+        color: color.withValues(alpha: 0.12),
+        border: Border.all(color: color),
+        borderRadius: BorderRadius.circular(AppCorners.pill),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            isCompleted ? Icons.check_circle : Icons.check_circle_outline,
-            color: isCompleted
-                ? context.appColors.success
-                : context.colors.onSurfaceVariant,
-          ),
+          Icon(icon, size: 13, color: color),
 
-          AppSpacing.horizontalGapMd,
+          AppSpacing.horizontalGapXs,
 
-          Expanded(
-            child: Text(
-              task.title,
-              style: context.text.bodyLarge?.copyWith(
-                decoration: isCompleted
-                    ? TextDecoration.lineThrough
-                    : TextDecoration.none,
-                color: isCompleted
-                    ? context.colors.onSurfaceVariant
-                    : context.colors.onSurface,
-              ),
-            ),
-          ),
-
-          AppSpacing.horizontalGapSm,
-
-          Container(
-            padding: AppSpacing.badge,
-            decoration: BoxDecoration(
-              border: Border.all(color: context.appColors.cardBorder),
-              borderRadius: BorderRadius.circular(AppCorners.pill),
-            ),
-            child: Text(
-              task.manualImportance.label,
-              style: context.text.labelSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+          Text(
+            label,
+            style: context.text.labelSmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
       ),
     );
+  }
+}
+
+class _ImportanceBadge extends StatelessWidget {
+  final Task task;
+
+  const _ImportanceBadge({required this.task});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.flag_outlined, size: 13, color: context.appColors.task),
+
+        AppSpacing.horizontalGapXs,
+
+        Text(
+          task.manualImportance.label,
+          style: context.text.labelSmall?.copyWith(
+            color: context.appColors.task,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DeadlineBadge extends StatelessWidget {
+  final DateTime deadline;
+
+  const _DeadlineBadge({required this.deadline});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Icon(
+          Icons.schedule_outlined,
+          size: 16,
+          color: context.colors.onSurfaceVariant,
+        ),
+
+        AppSpacing.gapXs,
+
+        Text(
+          _formatTime(deadline),
+          textAlign: TextAlign.end,
+          style: context.text.labelSmall?.copyWith(
+            color: context.colors.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatTime(DateTime dateTime) {
+    final hour = dateTime.hour;
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    final period = hour >= 12 ? 'PM' : 'AM';
+    final displayHour = hour == 0
+        ? 12
+        : hour > 12
+        ? hour - 12
+        : hour;
+
+    return '$displayHour:$minute $period';
   }
 }

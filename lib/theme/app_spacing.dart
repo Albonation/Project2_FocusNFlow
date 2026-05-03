@@ -88,7 +88,7 @@ class AppSpacing {
 
   static const EdgeInsets button = EdgeInsets.symmetric(
     horizontal: lg,
-    vertical: md,
+    vertical: lg,
   );
 
   static const EdgeInsets smallButton = EdgeInsets.symmetric(

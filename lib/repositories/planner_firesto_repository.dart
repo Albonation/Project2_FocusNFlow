@@ -32,10 +32,35 @@ class PlannerFirestoreRepository {
     for (final task in plan) {
       final docRef = weekRef.doc();
 
-      batch.set(docRef, task.toMap());
+      final taskWithId = task.copyWith(id: docRef.id);
+
+      batch.set(docRef, taskWithId.toMap());
     }
 
     await batch.commit();
+  }
+
+   Future<bool> isPlanGenerated(String uid, String weekId) async {
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('weekly_plans')
+        .doc(weekId)
+        .get();
+
+    return doc.exists && (doc.data()?['generated'] == true);
+  }
+
+  Future<void> markGenerated(String uid, String weekId) async {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('weekly_plans')
+        .doc(weekId)
+        .set({
+          'generated': true,
+          'generatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
   }
 
   Stream<List<PlannedTask>> getWeeklyPlan(
@@ -58,17 +83,36 @@ class PlannerFirestoreRepository {
         .snapshots()
         .map((snapshot) {
           return snapshot.docs.map((doc) {
-            final data = doc.data();
-
-            return PlannedTask(
-              taskId: data['task_id'],
-              title: data['title'],
-              courseId: data['course_id'],
-              date: (data['date'] as Timestamp).toDate(),
-              unitIndex: data['unit_index'],
+            return PlannedTask.fromMap(
+              doc.data(),
+              doc.id, 
             );
           }).toList();
         });
+  }
+
+  Future<void> updatePlannedTaskCompletion({
+    required String userId,
+    required DateTime weekStart,
+    required String plannedTaskId,
+    required bool isCompleted,
+  }) async {
+    final weekId = DateTime(
+      weekStart.year,
+      weekStart.month,
+      weekStart.day,
+    ).toIso8601String();
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('weekly_plans')
+        .doc(weekId)
+        .collection('planned_tasks')
+        .doc(plannedTaskId)
+        .update({
+      'is_completed': isCompleted,
+    });
   }
 
   

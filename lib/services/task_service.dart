@@ -1,8 +1,6 @@
 //whether a task can be completed, completing a task, validating task data
 //essentially the rules and logic for the task system
 //importing necessarry packages
-import 'package:focus_n_flow/services/planner_engine.dart';
-
 import '../models/task_model.dart';
 import '../repositories/task_repository.dart';
 import '../repositories/planner_firesto_repository.dart';

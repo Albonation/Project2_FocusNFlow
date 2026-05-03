@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:focus_n_flow/models/planned_task_model.dart';
+import 'package:focus_n_flow/repositories/planner_firesto_repository.dart';
 import 'package:focus_n_flow/repositories/task_repository.dart';
 import 'package:focus_n_flow/services/planner_engine.dart';
 import 'package:focus_n_flow/services/planner_service.dart';
@@ -17,17 +18,37 @@ class WeeklyPlanScreen extends StatefulWidget {
 class _WeeklyPlanScreenState extends State<WeeklyPlanScreen> {
   late final PlannerService plannerService;
   late final TaskRepository taskRepository;
+  late final PlannerFirestoreRepository plannerRepository;
+
+  bool _initialized = false;
+  late final DateTime _weekStart;
 
   @override
   void initState() {
     super.initState();
 
     taskRepository = TaskRepository();
+    plannerRepository = PlannerFirestoreRepository();
 
     plannerService = PlannerService(
       taskRepository: taskRepository,
-      engine: PlannerEngine(),
+      engine: PlannerEngine(), 
+      plannerRepository: plannerRepository,
     );
+
+    _weekStart = _normalize(DateTime.now());
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async{
+      if (_initialized) return;
+      _initialized = true;
+
+      final uid = FirebaseAuth.instance.currentUser!.uid;
+
+      await plannerService.generateAndSavePlanIfNeeded(
+        uid: uid,
+        weekStart: _weekStart,
+      );
+    });
   }
 
   DateTime _normalize(DateTime d) =>
@@ -36,13 +57,11 @@ class _WeeklyPlanScreenState extends State<WeeklyPlanScreen> {
   @override
   Widget build(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser!.uid;
-    final today = _normalize(DateTime.now());
-    final weekStart = today;
 
     return Scaffold(
       appBar: AppBar(title: const Text("Weekly Plan")),
       body: StreamBuilder<List<PlannedTask>>(
-        stream: plannerService.watchWeeklyPlan(uid, weekStart),
+        stream: plannerRepository.getWeeklyPlan(uid, _weekStart),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
@@ -56,8 +75,10 @@ class _WeeklyPlanScreenState extends State<WeeklyPlanScreen> {
 
           final week = List.generate(
             7,
-            (i) => today.add(Duration(days: i)),
+            (i) => _weekStart.add(Duration(days: i)),
           );
+
+          
 
           return Column(
             children: [

@@ -2,7 +2,6 @@ import 'package:focus_n_flow/models/planned_task_model.dart';
 import 'package:focus_n_flow/models/task_model.dart';
 
 class PlannerEngine {
-  static const int maxUnitsPerDay = 12;
 
   DateTime _normalize(DateTime d) =>
       DateTime(d.year, d.month, d.day);
@@ -21,7 +20,6 @@ class PlannerEngine {
     final plan = <PlannedTask>[];
 
     for (final task in tasks) {
-    
       if (task.status == TaskStatus.completed) continue;
 
       final total = task.estimatedHours.ceil();
@@ -31,11 +29,13 @@ class PlannerEngine {
 
         plan.add(
           PlannedTask(
+            id: '', 
             taskId: task.id!,
             title: task.title,
             courseId: task.courseId,
             date: day,
             unitIndex: i,
+            isCompleted: false,
           ),
         );
       }

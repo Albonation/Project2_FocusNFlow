@@ -18,26 +18,14 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int _selectedIndex = 0;
 
-  late final List<Widget> _screens;
   final NotificationService _notificationService = NotificationService();
 
   @override
   void initState() {
     super.initState();
     _notificationService.initialize();
-    //Unfinished screens commented out for testing
-    _screens = [
-      StudentDashboardScreen(),
-      CoursesTasksScreen(),
-      ProfileScreen(themeController: widget.themeController),
-      GroupsScreen(),
-      //StudyRoomsScreen(),
-      //WeeklyPlannerScreen(),
-    ];
   }
 
-  Future<void> _logout() async {
-    await FirebaseAuth.instance.signOut();
   void _goToTab(int index) {
     setState(() {
       _selectedIndex = index;
@@ -53,10 +41,12 @@ class _AppShellState extends State<AppShell> {
         return const WeeklyPlanScreen();
 
       case 2:
-        return const StudyRoomsScreen();
+        return const GroupsScreen();
 
       case 3:
-        return ProfileScreen(themeController: widget.themeController);
+        return ProfileScreen(
+          themeController: widget.themeController,
+        );
 
       default:
         return const StudentDashboardScreen();
@@ -65,66 +55,14 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-  Widget build(BuildContext context) {
     return Scaffold(
-      body: _selectedIndex < _screens.length
-          ? _screens[_selectedIndex]
-          : const StudentDashboardScreen(),
-      bottomNavigationBar: DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: Colors.grey, width: 1)),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: (index) async {
-            if (index == 4) {
-              await _logout();
-              return;
-            }
-
-            setState(() {
-              _selectedIndex = index;
-            });
-          },
-          items: const [
-            BottomNavigationBarItem(
-                icon: Icon(Icons.home),
-                label: 'Dashboard'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.add_task),
-                label: 'View Tasks',
-            ),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.person),
-                label: 'Profile'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.groups),
-                label: 'Groups'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.logout),
-                label: 'Logout'),
-            //Placeholder for unfinished screens.
-            //Commented out for testing
-            //BottomNavigationBarItem(
-            //  icon: Icon(Icons.group),
-            //  label: 'Group Chat',
-            //),
-            //BottomNavigationBarItem(
-            //  icon: Icon(Icons.checklist),
-            //  label: 'Weekly Planner',
-            //),
-            /*BottomNavigationBarItem(
-                icon: Icon(Icons.meeting_room),
-                label: 'Spaces',
-            ),*/
-          ],
-        ),
-      ),
       appBar: AppBar(
         title: const Text('FocusNFlow'),
         centerTitle: true,
       ),
+
       body: _buildScreen(),
+
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _goToTab,
@@ -138,8 +76,8 @@ class _AppShellState extends State<AppShell> {
             label: 'Weekly Planner',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.meeting_room),
-            label: 'Study Rooms',
+            icon: Icon(Icons.groups),
+            label: 'Groups',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),

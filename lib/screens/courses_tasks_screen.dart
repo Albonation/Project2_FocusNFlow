@@ -30,15 +30,15 @@ class _CoursesTasksScreenState extends State<CoursesTasksScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(result.message)));
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to delete task: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to delete task: $e')));
     }
   }
 
@@ -86,18 +86,14 @@ class _CoursesTasksScreenState extends State<CoursesTasksScreen> {
   void _openAddTaskScreen() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => const AddEditTaskScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const AddEditTaskScreen()),
     );
   }
 
   void _openEditTaskScreen(Task task) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => AddEditTaskScreen(task: task),
-      ),
+      MaterialPageRoute(builder: (_) => AddEditTaskScreen(task: task)),
     );
   }
 
@@ -108,26 +104,18 @@ class _CoursesTasksScreenState extends State<CoursesTasksScreen> {
     if (user == null) {
       return Scaffold(
         body: Center(
-          child: Text(
-            'No user logged in',
-            style: context.text.bodyLarge,
-          ),
+          child: Text('No user logged in', style: context.text.bodyLarge),
         ),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tasks'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Tasks'), centerTitle: true),
       body: StreamBuilder<List<Task>>(
         stream: _taskRepository.getTasksForUser(user.uid),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
@@ -217,17 +205,16 @@ class _TaskListCard extends StatelessWidget {
           task.title,
           style: context.text.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            decoration:
-            isCompleted ? TextDecoration.lineThrough : TextDecoration.none,
+            decoration: isCompleted
+                ? TextDecoration.lineThrough
+                : TextDecoration.none,
             color: isCompleted
                 ? context.colors.onSurfaceVariant
                 : context.colors.onSurface,
           ),
         ),
         subtitle: Text(
-          hasDescription
-              ? task.description
-              : 'Due: ${task.deadline.toLocal()}',
+          hasDescription ? task.description : 'Due: ${task.deadline.toLocal()}',
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: context.text.bodySmall?.copyWith(
@@ -246,17 +233,12 @@ class _TaskListCard extends StatelessWidget {
             }
           },
           itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'edit',
-              child: Text('Edit'),
-            ),
+            const PopupMenuItem(value: 'edit', child: Text('Edit')),
             PopupMenuItem(
               value: 'delete',
               child: Text(
                 'Delete',
-                style: TextStyle(
-                  color: context.appColors.danger,
-                ),
+                style: TextStyle(color: context.appColors.danger),
               ),
             ),
           ],
@@ -265,131 +247,3 @@ class _TaskListCard extends StatelessWidget {
     );
   }
 }
-
-//save for reference
-/*
-class CoursesTasksScreen extends StatefulWidget {
-  const CoursesTasksScreen({super.key});
-
-  @override
-  State<CoursesTasksScreen> createState() => _CoursesTasksScreenState();
-}
-
-class _CoursesTasksScreenState extends State<CoursesTasksScreen> {
-  final repo = TaskRepository();
-
-  @override
-  Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-
-    if (user == null) {
-      return const Scaffold(
-        body: Center(child: Text("No user logged in")),
-      );
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Tasks"),
-        centerTitle: true,
-      ),
-
-      body: StreamBuilder<List<Task>>(
-        stream: repo.getTasksForUser(user.uid),
-        builder: (context, snapshot) {
-          //handles having no data
-          if (!snapshot.hasData) {
-            return const Center(child: Text("No tasks yet"));
-          }
-
-          final tasks = snapshot.data!;
-
-          return ListView.builder(
-            itemCount: tasks.length,
-            itemBuilder: (context, index) {
-              final task = tasks[index];
-
-              return Card(
-                margin: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                child: ListTile(
-                  title: Text(task.title),
-                  subtitle: Text(task.description),
-
-                  leading: Icon(
-                    task.isCompleted
-                        ? Icons.check_circle
-                        : Icons.radio_button_unchecked,
-                  ),
-
-                  trailing: PopupMenuButton(
-                    onSelected: (value) {
-                      if (value == "delete") {
-                        showDialog(
-                          context: context,
-                          builder: (_) => AlertDialog(
-                            title: const Text("Delete Task?"),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                },
-                                child: const Text("Cancel"),
-                              ),
-
-                              TextButton(
-                                onPressed: () {
-                                  repo.deleteTask(task.id!);
-                                  Navigator.pop(context);
-                                },
-                                child: const Text("Delete"),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-
-                      if (value == "edit") {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => AddEditTaskScreen(task: task),
-                          ),
-                        );
-                      }
-                    },
-                    itemBuilder: (context) => const [
-                      PopupMenuItem(
-                        value: "edit",
-                        child: Text("Edit"),
-                      ),
-                      PopupMenuItem(
-                        value: "delete",
-                        child: Text("Delete"),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        },
-      ),
-
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // open add task screen
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const AddEditTaskScreen(),
-            ),
-          );
-        },
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
-}*/

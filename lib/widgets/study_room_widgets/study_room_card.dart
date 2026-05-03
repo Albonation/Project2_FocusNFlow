@@ -1,133 +1,64 @@
 import 'package:flutter/material.dart';
 import 'package:focus_n_flow/models/study_room_model.dart';
-import 'package:focus_n_flow/services/study_room_service.dart';
 import 'package:focus_n_flow/theme/app_corners.dart';
 import 'package:focus_n_flow/theme/app_spacing.dart';
 import 'package:focus_n_flow/theme/app_theme_extensions.dart';
 
-//stateful widget to account for button state management
-class StudyRoomCard extends StatefulWidget {
+class StudyRoomCard extends StatelessWidget {
   final StudyRoom room;
-  final String userId;
-  final StudyRoomService service;
-  final bool isUserInRoom;
-  final bool isUserInAnotherRoom;
+  final bool selectionMode;
+  final VoidCallback? onSelect;
+  final bool isSelected;
 
   const StudyRoomCard({
     super.key,
     required this.room,
-    required this.userId,
-    required this.service,
-    required this.isUserInRoom,
-    required this.isUserInAnotherRoom,
+    this.selectionMode = false,
+    this.isSelected = false,
+    this.onSelect,
   });
-
-  @override
-  State<StudyRoomCard> createState() => _StudyRoomCardState();
-}
-
-class _StudyRoomCardState extends State<StudyRoomCard> {
-  bool _isSubmitting = false;
 
   @override
   Widget build(BuildContext context) {
     return Card(
       margin: EdgeInsets.zero,
-      child: Padding(
-        padding: AppSpacing.card,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _StudyRoomHeader(room: widget.room),
-            AppSpacing.gapSm,
-            _OccupancyBadge(room: widget.room),
-            _StudyRoomDetails(room: widget.room),
-            AppSpacing.gapMd,
-            _StudyRoomActions(
-              isUserInRoom: widget.isUserInRoom,
-              isUserInAnotherRoom: widget.isUserInAnotherRoom,
-              isRoomFull: widget.room.isFull,
-              isSubmitting: _isSubmitting,
-              onJoinSolo: _joinSolo,
-              onLeaveRoom: _leaveRoom,
-              onJoinGroup: _showGroupMessage,
-            ),
-          ],
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppCorners.lg),
+        onTap: selectionMode && !room.isFull ? onSelect : null,
+        child: Padding(
+          padding: AppSpacing.card,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _StudyRoomHeader(room: room),
+              AppSpacing.gapSm,
+              _OccupancyBadge(room: room),
+              _StudyRoomDetails(room: room),
+              if (selectionMode) ...[
+                AppSpacing.gapMd,
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: room.isFull ? null : onSelect,
+                    icon: Icon(isSelected ? Icons.check_circle : Icons.check),
+                    label: Text(
+                      room.isFull
+                          ? 'Room Full'
+                          : isSelected
+                          ? 'Selected'
+                          : 'Select Room',
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
-      ),
-    );
-  }
-
-  //helper method to join the room on button press
-  Future<void> _joinSolo() async {
-    setState(() {
-      _isSubmitting = true;
-    });
-
-    final joined = await widget.service.joinRoom(
-      roomId: widget.room.id,
-      userId: widget.userId,
-    );
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      _isSubmitting = false;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          joined
-              ? 'Joined ${widget.room.name}'
-              : 'Unable to join ${widget.room.name}',
-        ),
-      ),
-    );
-  }
-
-  //helper method to leave the room on button press
-  Future<void> _leaveRoom() async {
-    setState(() {
-      _isSubmitting = true;
-    });
-
-    final left = await widget.service.leaveRoom(
-      roomId: widget.room.id,
-      userId: widget.userId,
-    );
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      _isSubmitting = false;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          left
-              ? 'Left ${widget.room.name}'
-              : 'You are not checked into ${widget.room.name}',
-        ),
-      ),
-    );
-  }
-
-  void _showGroupMessage() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Group join for ${widget.room.name} is coming soon!'),
       ),
     );
   }
 }
 
-//sub-widgets for the study room card
 class _StudyRoomHeader extends StatelessWidget {
   final StudyRoom room;
 
@@ -215,52 +146,6 @@ class _StudyRoomDetails extends StatelessWidget {
     }
 
     return features.join(' • ');
-  }
-}
-
-class _StudyRoomActions extends StatelessWidget {
-  final bool isUserInRoom;
-  final bool isUserInAnotherRoom;
-  final bool isRoomFull;
-  final bool isSubmitting;
-  final VoidCallback onJoinSolo;
-  final VoidCallback onLeaveRoom;
-  final VoidCallback onJoinGroup;
-
-  const _StudyRoomActions({
-    required this.isUserInRoom,
-    required this.isUserInAnotherRoom,
-    required this.isRoomFull,
-    required this.isSubmitting,
-    required this.onJoinSolo,
-    required this.onLeaveRoom,
-    required this.onJoinGroup,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: AppSpacing.sm,
-      runSpacing: AppSpacing.sm,
-      children: [
-        if (isUserInRoom)
-          FilledButton(
-            onPressed: isSubmitting ? null : onLeaveRoom,
-            child: const Text('Leave Room'),
-          )
-        else
-          FilledButton(
-            onPressed: isRoomFull || isSubmitting || isUserInAnotherRoom
-                ? null
-                : onJoinSolo,
-            child: const Text('Join Solo'),
-          ),
-        OutlinedButton(
-          onPressed: isSubmitting ? null : onJoinGroup,
-          child: const Text('Join as Group'),
-        ),
-      ],
-    );
   }
 }
 

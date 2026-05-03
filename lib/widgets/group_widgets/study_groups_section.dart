@@ -7,12 +7,10 @@ import 'package:focus_n_flow/widgets/group_widgets/add_edit_study_group_dialog.d
 import 'package:focus_n_flow/widgets/group_widgets/study_group_card.dart';
 
 class StudyGroupsSection extends StatefulWidget {
+  final void Function(StudyGroup group)? onOpenGroup;
   final void Function(StudyGroup group)? onOpenGroupChat;
 
-  const StudyGroupsSection({
-    super.key,
-    this.onOpenGroupChat,
-  });
+  const StudyGroupsSection({super.key, this.onOpenGroup, this.onOpenGroupChat});
 
   @override
   State<StudyGroupsSection> createState() => _StudyGroupsSectionState();
@@ -44,6 +42,22 @@ class _StudyGroupsSectionState extends State<StudyGroupsSection> {
     });
 
     await future;
+  }
+
+  void _openGroup({required StudyGroup group, required bool canOpen}) {
+    if (!canOpen) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Join this group before opening its details.'),
+        ),
+      );
+      return;
+    }
+
+    if (widget.onOpenGroup != null) {
+      widget.onOpenGroup!(group);
+      return;
+    }
   }
 
   Future<void> _showCreateGroupDialog() async {
@@ -223,17 +237,20 @@ class _StudyGroupsSectionState extends State<StudyGroupsSection> {
     }
   }
 
-  void _openGroupChat(StudyGroup group) {
+  void _openGroupChat({required StudyGroup group, required bool canOpen}) {
+    if (!canOpen) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Join this group before opening its chat.'),
+        ),
+      );
+      return;
+    }
+
     if (widget.onOpenGroupChat != null) {
       widget.onOpenGroupChat!(group);
       return;
     }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Group chat for "${group.name}" is coming next.'),
-      ),
-    );
   }
 
   void _showResult(StudyGroupActionResult result) {
@@ -253,23 +270,17 @@ class _StudyGroupsSectionState extends State<StudyGroupsSection> {
       stream: _groupService.watchActiveGroups(),
       builder: (context, groupsSnapshot) {
         if (groupsSnapshot.hasError) {
-          return _GroupsErrorState(
-            message: groupsSnapshot.error.toString(),
-          );
+          return _GroupsErrorState(message: groupsSnapshot.error.toString());
         }
 
         if (groupsSnapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
+          return const Center(child: CircularProgressIndicator());
         }
 
         final groups = groupsSnapshot.data ?? [];
 
         if (groups.isEmpty) {
-          return _GroupsEmptyState(
-            onCreateGroup: _showCreateGroupDialog,
-          );
+          return _GroupsEmptyState(onCreateGroup: _showCreateGroupDialog);
         }
 
         return FutureBuilder<Set<String>>(
@@ -278,11 +289,9 @@ class _StudyGroupsSectionState extends State<StudyGroupsSection> {
             final joinedGroupIds = joinedGroupsSnapshot.data ?? {};
 
             if (joinedGroupsSnapshot.connectionState ==
-                ConnectionState.waiting &&
+                    ConnectionState.waiting &&
                 !joinedGroupsSnapshot.hasData) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
+              return const Center(child: CircularProgressIndicator());
             }
 
             if (joinedGroupsSnapshot.hasError) {
@@ -311,6 +320,7 @@ class _StudyGroupsSectionState extends State<StudyGroupsSection> {
                   final isOwner = _groupService.isCurrentUserGroupOwner(group);
                   final isMember = joinedGroupIds.contains(group.id);
                   final isBusy = _busyGroupIds.contains(group.id);
+                  final canOpenGroup = isOwner || isMember;
 
                   return StudyGroupCard(
                     group: group,
@@ -321,7 +331,10 @@ class _StudyGroupsSectionState extends State<StudyGroupsSection> {
                     onLeave: () => _leaveGroup(group),
                     onEdit: () => _showEditGroupDialog(group),
                     onDelete: () => _confirmDeactivateGroup(group),
-                    onOpenChat: () => _openGroupChat(group),
+                    onOpenGroup: () =>
+                        _openGroup(group: group, canOpen: canOpenGroup),
+                    onOpenChat: () =>
+                        _openGroupChat(group: group, canOpen: canOpenGroup),
                   );
                 },
               ),
@@ -349,9 +362,7 @@ class _GroupsHeader extends StatelessWidget {
       children: [
         Text(
           'Available Groups',
-          style: context.text.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: context.text.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         IconButton(
           tooltip: 'Create group',
@@ -367,9 +378,7 @@ class _GroupsHeader extends StatelessWidget {
 class _GroupsEmptyState extends StatelessWidget {
   final VoidCallback onCreateGroup;
 
-  const _GroupsEmptyState({
-    required this.onCreateGroup,
-  });
+  const _GroupsEmptyState({required this.onCreateGroup});
 
   @override
   Widget build(BuildContext context) {
@@ -421,9 +430,7 @@ class _GroupsEmptyState extends StatelessWidget {
 class _GroupsErrorState extends StatelessWidget {
   final String message;
 
-  const _GroupsErrorState({
-    required this.message,
-  });
+  const _GroupsErrorState({required this.message});
 
   @override
   Widget build(BuildContext context) {
@@ -433,9 +440,7 @@ class _GroupsErrorState extends StatelessWidget {
         child: Text(
           'Something went wrong loading study groups.\n\n$message',
           textAlign: TextAlign.center,
-          style: context.text.bodyMedium?.copyWith(
-            color: context.colors.error,
-          ),
+          style: context.text.bodyMedium?.copyWith(color: context.colors.error),
         ),
       ),
     );

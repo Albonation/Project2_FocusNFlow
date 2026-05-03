@@ -17,6 +17,12 @@ class StudyRoom {
   final bool isActive;
   final DateTime? updatedAt;
 
+  //fields for study session lifecycle actions
+  final String? activeSessionId;
+  final String? activeSessionTitle;
+  final String? activeGroupId;
+  final String? activeGroupName;
+
   const StudyRoom({
     required this.id,
     required this.name,
@@ -31,6 +37,12 @@ class StudyRoom {
     this.notes,
     required this.isActive,
     this.updatedAt,
+
+    //fields for study session lifecycle actions
+    this.activeSessionId,
+    this.activeSessionTitle,
+    this.activeGroupId,
+    this.activeGroupName,
   });
 
   factory StudyRoom.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -38,17 +50,21 @@ class StudyRoom {
 
     return StudyRoom(
       id: doc.id,
-      name: data['name'] ?? '',
-      building: data['building'] ?? '',
-      campus: data['campus'] ?? '',
-      floor: data['floor'] ?? '',
+      name: data['name'] as String? ?? '',
+      building: data['building'] as String? ?? '',
+      campus: data['campus'] as String? ?? '',
+      floor: data['floor'] as String? ?? '',
       capacity: (data['capacity'] as num?)?.toInt() ?? 0,
       currentOccupancy: (data['currentOccupancy'] as num?)?.toInt() ?? 0,
-      hasWhiteboard: data['hasWhiteboard'] ?? false,
-      hasMonitor: data['hasMonitor'] ?? false,
-      isReservable: data['isReservable'] ?? false,
-      notes: data['notes'],
-      isActive: data['isActive'] ?? true,
+      hasWhiteboard: data['hasWhiteboard'] as bool? ?? false,
+      hasMonitor: data['hasMonitor'] as bool? ?? false,
+      isReservable: data['isReservable'] as bool? ?? false,
+      notes: data['notes'] as String?,
+      isActive: data['isActive'] as bool? ?? true,
+      activeSessionId: data['activeSessionId'] as String?,
+      activeSessionTitle: data['activeSessionTitle'] as String?,
+      activeGroupId: data['activeGroupId'] as String?,
+      activeGroupName: data['activeGroupName'] as String?,
       updatedAt: data['updatedAt'] is Timestamp
           ? (data['updatedAt'] as Timestamp).toDate()
           : null,
@@ -69,6 +85,10 @@ class StudyRoom {
       'notes': notes,
       'isActive': isActive,
       'isFull': isFull,
+      'activeSessionId': activeSessionId,
+      'activeSessionTitle': activeSessionTitle,
+      'activeGroupId': activeGroupId,
+      'activeGroupName': activeGroupName,
       'updatedAt': updatedAt != null
           ? Timestamp.fromDate(updatedAt!)
           : FieldValue.serverTimestamp(),
@@ -88,6 +108,10 @@ class StudyRoom {
     bool? isReservable,
     Object? notes = _unset,
     bool? isActive,
+    Object? activeSessionId = _unset,
+    Object? activeSessionTitle = _unset,
+    Object? activeGroupId = _unset,
+    Object? activeGroupName = _unset,
     DateTime? updatedAt,
   }) {
     return StudyRoom(
@@ -103,11 +127,31 @@ class StudyRoom {
       isReservable: isReservable ?? this.isReservable,
       notes: notes == _unset ? this.notes : notes as String?,
       isActive: isActive ?? this.isActive,
+      activeSessionId: activeSessionId == _unset
+          ? this.activeSessionId
+          : activeSessionId as String?,
+      activeSessionTitle: activeSessionTitle == _unset
+          ? this.activeSessionTitle
+          : activeSessionTitle as String?,
+      activeGroupId: activeGroupId == _unset
+          ? this.activeGroupId
+          : activeGroupId as String?,
+      activeGroupName: activeGroupName == _unset
+          ? this.activeGroupName
+          : activeGroupName as String?,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
-  bool get isFull => currentOccupancy >= capacity;
+  bool get isFull => capacity > 0 && currentOccupancy >= capacity;
+
+  bool get isInUseByActiveSession {
+    return activeSessionId != null && activeSessionId!.trim().isNotEmpty;
+  }
+
+  bool get canBeSelectedForSession {
+    return isActive && isReservable;
+  }
 
   int get availableSeats {
     final seats = capacity - currentOccupancy;

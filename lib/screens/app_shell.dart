@@ -29,7 +29,7 @@ class _AppShellState extends State<AppShell> {
         return const CoursesTasksScreen();
 
       case 2:
-        return const PlannerScreen();
+        return WeeklyPlanScreen();
 
       case 3:
         return ProfileScreen(

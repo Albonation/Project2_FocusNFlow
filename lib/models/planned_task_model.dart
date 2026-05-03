@@ -1,43 +1,55 @@
-import 'package:focus_n_flow/models/task_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PlannedTask {
+  final String id;
   final String taskId;
-  final Task task;
   final DateTime date;
-  final double hours;
-  final bool isLocked;
+  final int unitIndex;
+  final DateTime weekStart;
 
   PlannedTask({
+    required this.id,
     required this.taskId,
-    required this.task,
     required this.date,
-    required this.hours,
-    this.isLocked = false,
+    required this.unitIndex,
+    required this.weekStart,
   });
 
-  PlannedTask copyWith({
-    String? taskId,
-    Task? task,
-    DateTime? date,
-    double? hours,
-    bool? isLocked,
-  }) {
+  factory PlannedTask.fromMap(String id, Map<String, dynamic> data) {
     return PlannedTask(
-      taskId: taskId ?? this.taskId,
-      task: task ?? this.task,
-      date: date ?? this.date,
-      hours: hours ?? this.hours,
-      isLocked: isLocked ?? this.isLocked,
+      id: id,
+      taskId: data['task_id'] as String,
+      date: (data['date'] as Timestamp).toDate(),
+      unitIndex: (data['unit_index'] as num).toInt(),
+      weekStart: (data['week_start'] as Timestamp).toDate(),
     );
   }
 
-  @override
-  bool operator ==(Object other) {
-    return other is PlannedTask &&
-        other.taskId == taskId &&
-        other.date == date;
+ DateTime _normalize(DateTime d) =>
+    DateTime(d.year, d.month, d.day);
+
+  Map<String, dynamic> toMap() {
+    return {
+      'task_id': taskId,
+      'date': Timestamp.fromDate(_normalize(date)),   
+      'unit_index': unitIndex,
+      'week_start': Timestamp.fromDate(_normalize(weekStart)),
+    };
   }
 
-  @override
-  int get hashCode => taskId.hashCode ^ date.hashCode;
+  PlannedTask copyWith({
+    String? id,
+    String? taskId,
+    DateTime? date,
+    int? unitIndex,
+    DateTime? weekStart,
+  }) {
+    return PlannedTask(
+      id: id ?? this.id,
+      taskId: taskId ?? this.taskId,
+      date: date ?? this.date,
+      unitIndex: unitIndex ?? this.unitIndex,
+      weekStart: weekStart ?? this.weekStart,
+    );
+  }
 }

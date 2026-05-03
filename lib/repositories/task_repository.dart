@@ -172,6 +172,28 @@ class TaskRepository {
   }
 
   //some maybe methods
+  Future<Task?> getTaskByTaskId({
+    required String userId,
+    required String taskId,
+  }) async {
+    try {
+      final doc = await _tasksCollection(userId)
+          .doc(taskId)
+          .get();
+
+      if (!doc.exists || doc.data() == null) {
+        debugPrint('[TASK_REPO] Task not found: $taskId');
+        return null;
+      }
+
+      debugPrint('[TASK_REPO] Fetched task: ${doc.id}');
+      return Task.fromMap(doc.data()!, id: doc.id);
+    } catch (e) {
+      debugPrint('[TASK_REPO] Failed to fetch task $taskId: $e');
+      rethrow;
+    }
+  }
+  
   /*
 
   //get tasks by status

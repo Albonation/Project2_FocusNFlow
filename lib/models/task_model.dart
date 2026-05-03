@@ -39,7 +39,9 @@ extension TaskStatusExtension on TaskStatus {
   }
 }
 
-enum ImportanceLevel { low, normal, high }
+enum ImportanceLevel { low, normal, high;
+
+  Object? operator /(double other) {} }
 
 extension ImportanceLevelExtension on ImportanceLevel {
   String get value {
@@ -91,6 +93,7 @@ class Task {
   final DateTime? completedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
+  
 
   Task({
     this.id,
@@ -187,21 +190,25 @@ class Task {
   double get priorityScore {
     final now = DateTime.now();
 
-    final daysLeft = deadline.difference(now).inDays;
+    final daysLeft = deadline.difference(now).inDays.clamp(0, 30);
 
-    final effortScore = estimatedHours * 2;
+    // Urgency (smooth curve instead of linear jump)
+    final urgencyScore = 1 / (daysLeft + 1); // 0 → 1 scale
 
-    final urgencyScore = daysLeft <= 0
-        ? 50
-        : (30 - daysLeft).clamp(0, 30).toDouble();
+    // Effort (normalized so big tasks don’t dominate)
+    final effortScore = (estimatedHours / 10).clamp(0, 1);
 
+    // Importance (keep your weights but normalize)
     final importanceScore = switch (manualImportance) {
-      ImportanceLevel.low => 10,
-      ImportanceLevel.normal => 20,
-      ImportanceLevel.high => 30,
+      ImportanceLevel.low => 0.3,
+      ImportanceLevel.normal => 0.6,
+      ImportanceLevel.high => 1.0,
     };
 
-    return urgencyScore + effortScore + importanceScore;
+    // Final weighted score
+    return (urgencyScore * 0.5) +
+          (importanceScore * 0.3) +
+          (effortScore * 0.2);
   }
 
   bool get isCompleted => status == TaskStatus.completed;

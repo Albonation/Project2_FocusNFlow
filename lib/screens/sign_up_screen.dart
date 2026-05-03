@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:focus_n_flow/screens/student_dashboard_screen.dart';
+import 'package:focus_n_flow/screens/sign_in_screen.dart';
 import 'package:focus_n_flow/services/registration_login_service.dart';
 import '../widgets/login_signup_widgets/sign_up_widget.dart';
 
@@ -51,7 +51,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => const StudentDashboardScreen(),
+        builder: (context) => const SignInScreen(),
       ),
     );
   }

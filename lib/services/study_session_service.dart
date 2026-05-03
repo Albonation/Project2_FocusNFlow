@@ -191,15 +191,27 @@ class StudySessionService {
         }
       }
 
-      final updatedSession = session.copyWith(
+      final updatedSession = StudySession(
+        id: session.id,
+        groupId: session.groupId,
+        groupName: session.groupName,
         title: title.trim(),
         description: description.trim(),
-        startsAt: startsAt,
-        endsAt: endsAt,
         courseId: _cleanNullable(courseId),
         courseCode: _cleanNullable(courseCode),
         roomId: cleanedRoomId,
         roomName: _cleanNullable(roomName),
+        createdBy: session.createdBy,
+        createdByName: session.createdByName,
+        createdAt: session.createdAt,
+        updatedAt: session.updatedAt,
+        startsAt: startsAt,
+        endsAt: endsAt,
+        status: session.status,
+        participantCount: session.participantCount,
+        reminderSent: session.reminderSent,
+        isActive: session.isActive,
+        startedBy: session.startedBy,
       );
 
       await _repository.updateSession(updatedSession);
@@ -354,6 +366,7 @@ class StudySessionService {
   validation helper methods
    */
   String? get currentUserId => _auth.currentUser?.uid;
+
   User? get _currentUser => _auth.currentUser;
 
   String? _validateSignedIn(User? user, String action) {

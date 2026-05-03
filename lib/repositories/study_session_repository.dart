@@ -244,6 +244,8 @@ class StudySessionRepository {
   Future<void> cancelSession({required String sessionId}) async {
     _validateSessionId(sessionId);
 
+    final joinedParticipantDocs = await _getJoinedParticipantDocs(sessionId);
+
     await _firestore.runTransaction((transaction) async {
       final sessionRef = _sessionRef(sessionId);
       final sessionDoc = await transaction.get(sessionRef);
@@ -254,14 +256,16 @@ class StudySessionRepository {
 
       final sessionData = sessionDoc.data() ?? {};
 
-      await _clearRoomActiveSessionIfNeeded(
+      await _cleanupJoinedParticipantsAndRoomIfNeeded(
         transaction: transaction,
         sessionId: sessionId,
         sessionData: sessionData,
+        joinedParticipantDocs: joinedParticipantDocs,
       );
 
       transaction.update(sessionRef, {
         'status': StudySessionStatus.cancelled.value,
+        'participantCount': 0,
         'isActive': false,
         'updatedAt': FieldValue.serverTimestamp(),
       });
@@ -271,6 +275,8 @@ class StudySessionRepository {
   Future<void> completeSession({required String sessionId}) async {
     _validateSessionId(sessionId);
 
+    final joinedParticipantDocs = await _getJoinedParticipantDocs(sessionId);
+
     await _firestore.runTransaction((transaction) async {
       final sessionRef = _sessionRef(sessionId);
       final sessionDoc = await transaction.get(sessionRef);
@@ -281,53 +287,94 @@ class StudySessionRepository {
 
       final sessionData = sessionDoc.data() ?? {};
 
-      await _clearRoomActiveSessionIfNeeded(
+      await _cleanupJoinedParticipantsAndRoomIfNeeded(
         transaction: transaction,
         sessionId: sessionId,
         sessionData: sessionData,
+        joinedParticipantDocs: joinedParticipantDocs,
       );
 
       transaction.update(sessionRef, {
         'status': StudySessionStatus.completed.value,
+        'participantCount': 0,
         'isActive': true,
         'updatedAt': FieldValue.serverTimestamp(),
       });
     });
   }
 
-  Future<void> _clearRoomActiveSessionIfNeeded({
+  Future<void> _cleanupJoinedParticipantsAndRoomIfNeeded({
     required Transaction transaction,
     required String sessionId,
     required Map<String, dynamic> sessionData,
+    required List<QueryDocumentSnapshot<Map<String, dynamic>>>
+    joinedParticipantDocs,
   }) async {
+    final joinedParticipantCount = joinedParticipantDocs.length;
     final roomId = sessionData['roomId'] as String?;
 
-    //rooms are optional, if no room then no room state to clean up
-    if (roomId == null || roomId.trim().isEmpty) {
-      return;
+    DocumentReference<Map<String, dynamic>>? roomRef;
+    int? roomCurrentOccupancy;
+    int? roomCapacity;
+
+    if (roomId != null && roomId.trim().isNotEmpty) {
+      roomRef = _roomRef(roomId.trim());
+      final roomDoc = await transaction.get(roomRef);
+
+      if (roomDoc.exists) {
+        final roomData = roomDoc.data() ?? {};
+
+        roomCurrentOccupancy =
+            (roomData['currentOccupancy'] as num?)?.toInt() ?? 0;
+        roomCapacity = (roomData['capacity'] as num?)?.toInt() ?? 0;
+
+        final activeSessionId = roomData['activeSessionId'] as String?;
+
+        if (activeSessionId == sessionId) {
+          transaction.update(roomRef, {
+            'activeSessionId': null,
+            'activeSessionTitle': null,
+            'activeGroupId': null,
+            'activeGroupName': null,
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+        }
+      }
     }
 
-    final roomRef = _roomRef(roomId!);
-    final roomDoc = await transaction.get(roomRef);
-
-    if (!roomDoc.exists) {
-      return;
+    for (final participantDoc in joinedParticipantDocs) {
+      transaction.update(participantDoc.reference, {
+        'status': SessionParticipantStatus.left.value,
+        'leftAt': FieldValue.serverTimestamp(),
+      });
     }
 
-    final roomData = roomDoc.data() ?? {};
-    final activeSessionId = roomData['activeSessionId'] as String?;
+    if (roomRef != null &&
+        roomCurrentOccupancy != null &&
+        roomCapacity != null &&
+        joinedParticipantCount > 0) {
+      final newOccupancy = max(
+        0,
+        roomCurrentOccupancy - joinedParticipantCount,
+      );
 
-    if (activeSessionId != sessionId) {
-      return;
+      transaction.update(roomRef, {
+        'currentOccupancy': newOccupancy,
+        'isFull': roomCapacity > 0 && newOccupancy >= roomCapacity,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
     }
+  }
 
-    transaction.update(roomRef, {
-      'activeSessionId': null,
-      'activeSessionTitle': null,
-      'activeGroupId': null,
-      'activeGroupName': null,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
+  _getJoinedParticipantDocs(String sessionId) async {
+    _validateSessionId(sessionId);
+
+    final snapshot = await _participantsRef(
+      sessionId,
+    ).where('status', isEqualTo: SessionParticipantStatus.joined.value).get();
+
+    return snapshot.docs;
   }
 
   /*

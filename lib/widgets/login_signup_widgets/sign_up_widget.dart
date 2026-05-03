@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:focus_n_flow/screens/sign_in_screen.dart';
+import '../../theme/app_spacing.dart';
+import '../../theme/app_theme_extensions.dart';
 
 class SignUpForm extends StatelessWidget {
   final TextEditingController nameController;
@@ -22,82 +24,77 @@ class SignUpForm extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const SizedBox(height: 40),
+        AppSpacing.gapXl,
 
         TextField(
           controller: nameController,
-          decoration: InputDecoration(
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(
             labelText: "Full Name",
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            prefixIcon: Icon(Icons.person_outline),
           ),
         ),
 
-        const SizedBox(height: 20),
+        AppSpacing.gapLg,
 
         TextField(
           controller: emailController,
-          decoration: InputDecoration(
+          keyboardType: TextInputType.emailAddress,
+          decoration: const InputDecoration(
             labelText: "Email",
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            hintText: 'you@student.gsu.edu',
+            prefixIcon: Icon(Icons.email_outlined),
           ),
         ),
 
-        const SizedBox(height: 20),
+        AppSpacing.gapLg,
 
         TextField(
           controller: passwordController,
           obscureText: true,
-          decoration: InputDecoration(
+          decoration: const InputDecoration(
             labelText: "Password",
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            prefixIcon: Icon(Icons.lock_outline),
           ),
         ),
 
-        const SizedBox(height: 20),
+        AppSpacing.gapLg,
 
         TextField(
           controller: confirmPassController,
           obscureText: true,
-          decoration: InputDecoration(
+          decoration: const InputDecoration(
             labelText: "Confirm Password",
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            prefixIcon: Icon(Icons.lock_reset_outlined),
           ),
         ),
 
-        const SizedBox(height: 30),
+        AppSpacing.gapXl,
 
         SizedBox(
           width: double.infinity,
-          height: 50,
           child: ElevatedButton(
             onPressed: registerUser,
-            child: const Text(
-              "Sign Up",
-              style: TextStyle(fontSize: 18),
-            ),
+            child: const Text("Sign Up"),
           ),
         ),
 
-        const SizedBox(height: 16),
+        AppSpacing.gapLg,
 
         TextButton(
           onPressed: () {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(
-                builder: (context) => const SignInScreen(),
-              ),
+              MaterialPageRoute(builder: (context) => const SignInScreen()),
             );
           },
-          child: const Text("Already have an account? Sign In"),
+          child: Text(
+            "Already have an account? Sign In",
+            style: context.text.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: context.appColors.brand,
+            ),
+          ),
         ),
       ],
     );

@@ -9,22 +9,19 @@ import 'package:focus_n_flow/widgets/course_widgets/course_chip_card.dart';
 
 class CoursesSection extends StatefulWidget {
   final String userId;
+  final CourseService courseService;
 
-  const CoursesSection({super.key, required this.userId});
+  const CoursesSection({
+    super.key, 
+    required this.userId, 
+    required this.courseService
+  });
 
   @override
   State<CoursesSection> createState() => _CoursesSectionState();
 }
 
 class _CoursesSectionState extends State<CoursesSection> {
-  final CourseRepository _courseRepository = CourseRepository();
-  late final CourseService _courseService;
-
-  @override
-  void initState() {
-    super.initState();
-    _courseService = CourseService(courseRepository: _courseRepository);
-  }
 
   Future<void> _showAddCourseDialog() async {
     await showDialog(
@@ -66,7 +63,7 @@ class _CoursesSectionState extends State<CoursesSection> {
 
   Future<void> _createCourse(Course course) async {
     try {
-      final result = await _courseService.createCourse(course);
+      final result = await widget.courseService.createCourse(course);
 
       if (!mounted) return;
       _showMessage(result.message);
@@ -78,7 +75,7 @@ class _CoursesSectionState extends State<CoursesSection> {
 
   Future<void> _saveCourseChanges(Course course) async {
     try {
-      final result = await _courseService.saveCourseChanges(course);
+      final result = await widget.courseService.saveCourseChanges(course);
 
       if (!mounted) return;
       _showMessage(result.message);
@@ -90,7 +87,7 @@ class _CoursesSectionState extends State<CoursesSection> {
 
   Future<void> _deleteCourse(Course course) async {
     try {
-      final result = await _courseService.deleteCourse(course);
+      final result = await widget.courseService.deleteCourse(course);
 
       if (!mounted) return;
       _showMessage(result.message);
@@ -164,7 +161,7 @@ class _CoursesSectionState extends State<CoursesSection> {
             AppSpacing.gapMd,
 
             StreamBuilder<List<Course>>(
-              stream: _courseRepository.getCoursesForUser(widget.userId),
+              stream: widget.courseService.getCoursesForUser(widget.userId),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const LinearProgressIndicator();

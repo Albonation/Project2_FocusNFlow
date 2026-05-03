@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:focus_n_flow/models/task_model.dart';
+import 'package:focus_n_flow/repositories/planner_firesto_repository.dart';
 import 'package:focus_n_flow/repositories/task_repository.dart';
 import 'package:focus_n_flow/services/task_service.dart';
 import 'package:focus_n_flow/theme/app_spacing.dart';
@@ -27,11 +28,15 @@ class TasksSection extends StatefulWidget {
 class _TasksSectionState extends State<TasksSection> {
   final TaskRepository _taskRepository = TaskRepository();
   late final TaskService _taskService;
+  final PlannerFirestoreRepository _plannerRepository = PlannerFirestoreRepository();
 
   @override
   void initState() {
     super.initState();
-    _taskService = TaskService(taskRepository: _taskRepository);
+    _taskService = TaskService(
+      taskRepository: _taskRepository,
+      plannerRepository: _plannerRepository
+    );
   }
 
   Future<void> _deleteTask(Task task) async {

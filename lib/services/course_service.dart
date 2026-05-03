@@ -146,6 +146,10 @@ class CourseService {
     );
   }
 
+  Stream<List<Course>> getCoursesForUser(String userId) {
+    return courseRepository.getCoursesForUser(userId);
+  }
+
   CourseActionResult successResult(Course course, String message) {
     return CourseActionResult(
       success: true,

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:focus_n_flow/models/task_model.dart';
+import 'package:focus_n_flow/repositories/course_repository.dart';
 import 'package:focus_n_flow/screens/add_edit_task_screen.dart';
+import 'package:focus_n_flow/services/course_service.dart';
 import 'package:focus_n_flow/theme/app_spacing.dart';
 import 'package:focus_n_flow/theme/app_theme_extensions.dart';
 import 'package:focus_n_flow/widgets/course_widgets/courses_section.dart';
@@ -50,7 +52,10 @@ class CoursesTasksScreen extends StatelessWidget {
       body: ListView(
         padding: AppSpacing.screen,
         children: [
-          CoursesSection(userId: user.uid),
+          CoursesSection(
+            userId: user.uid,
+            courseService: CourseService(repository: CourseRepository()),
+          ),
 
           AppSpacing.gapXxl,
 

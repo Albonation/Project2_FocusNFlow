@@ -5,6 +5,7 @@ import 'package:focus_n_flow/models/session_participant_model.dart';
 import 'package:focus_n_flow/services/study_session_service.dart';
 import 'package:focus_n_flow/screens/create_study_session_screen.dart';
 import 'package:focus_n_flow/widgets/study_session_widgets/shared_timer_card.dart';
+import 'package:focus_n_flow/widgets/study_session_widgets/session_goals_section.dart';
 import 'package:focus_n_flow/theme/app_theme_extensions.dart';
 import 'package:focus_n_flow/theme/app_spacing.dart';
 import 'package:focus_n_flow/theme/app_corners.dart';
@@ -227,6 +228,10 @@ class _StudySessionDetailsScreenState extends State<StudySessionDetailsScreen> {
                             ConnectionState.waiting &&
                         !participantSnapshot.hasData,
                   ),
+
+                  AppSpacing.gapXl,
+
+                  SessionGoalsSection(sessionId: session.id),
 
                   AppSpacing.gapXl,
 
@@ -500,21 +505,19 @@ class _SessionParticipationCard extends StatelessWidget {
 class _SharedTimerUnavailableCard extends StatelessWidget {
   final StudySession session;
 
-  const _SharedTimerUnavailableCard({
-    required this.session,
-  });
+  const _SharedTimerUnavailableCard({required this.session});
 
   @override
   Widget build(BuildContext context) {
     final message = switch (session.status) {
       StudySessionStatus.scheduled =>
-      'Start this session to use the shared study timer.',
+        'Start this session to use the shared study timer.',
       StudySessionStatus.completed =>
-      'This session has ended, so the shared timer is no longer active.',
+        'This session has ended, so the shared timer is no longer active.',
       StudySessionStatus.cancelled =>
-      'This session was cancelled, so the shared timer is unavailable.',
+        'This session was cancelled, so the shared timer is unavailable.',
       StudySessionStatus.active =>
-      'The shared timer is available for this active session.',
+        'The shared timer is available for this active session.',
     };
 
     return Card(

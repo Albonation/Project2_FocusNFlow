@@ -66,6 +66,11 @@ class _StudentDashboardState extends State<StudentDashboardScreen> {
         padding: AppSpacing.tile,
         child: Column(
           children: [
+            Text(
+              "Welcome, $fullName",
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            AppSpacing.gapXl,
             ProgressSummary(stream: taskStream),
             AppSpacing.gapXl,
             UpcomingStudySessions(),

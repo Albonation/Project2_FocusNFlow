@@ -7,9 +7,9 @@ import 'package:focus_n_flow/screens/study_rooms_screen.dart';
 import 'package:focus_n_flow/screens/groups_screen.dart';
 import '../theme/theme_controller.dart';
 
-
-class AppShell extends StatefulWidget{
+class AppShell extends StatefulWidget {
   final ThemeController themeController;
+
   const AppShell({super.key, required this.themeController});
 
   @override
@@ -22,9 +22,9 @@ class _AppShellState extends State<AppShell> {
   late final List<Widget> _screens;
 
   @override
-  void initState(){
+  void initState() {
     super.initState();
-  //Unfinished screens commented out for testing
+    //Unfinished screens commented out for testing
     _screens = [
       StudentDashboardScreen(),
       CoursesTasksScreen(),
@@ -40,43 +40,36 @@ class _AppShellState extends State<AppShell> {
   }
 
   @override
-  Widget build(BuildContext context){
+  Widget build(BuildContext context) {
     return Scaffold(
       body: _selectedIndex < _screens.length
           ? _screens[_selectedIndex]
           : const StudentDashboardScreen(),
       bottomNavigationBar: DecoratedBox(
         decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(
-              color: Colors.grey, width: 1
-            )
-          ),
+          border: Border(top: BorderSide(color: Colors.grey, width: 1)),
         ),
         child: BottomNavigationBar(
           currentIndex: _selectedIndex,
           onTap: (index) async {
-            /*
-            if (index == 4){
+            if (index == 3) {
               await _logout();
               return;
             }
-            */
 
-            setState((){
+            setState(() {
               _selectedIndex = index;
             });
           },
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(Icons.home), 
-              label: 'Dashboard',
-            ),
+                icon: Icon(Icons.home),
+                label: 'Dashboard'),
             BottomNavigationBarItem(
-              icon: Icon(Icons.add_task),
-              label: 'View Tasks',
+                icon: Icon(Icons.add_task),
+                label: 'View Tasks',
             ),
-            //Placeholder for unfinished screens. 
+            //Placeholder for unfinished screens.
             //Commented out for testing
             //BottomNavigationBarItem(
             //  icon: Icon(Icons.group),
@@ -88,24 +81,20 @@ class _AppShellState extends State<AppShell> {
             //),
             BottomNavigationBarItem(
                 icon: Icon(Icons.person),
-                label: 'Profile',
-            ),
-            BottomNavigationBarItem(
+                label: 'Profile'),
+            /*BottomNavigationBarItem(
                 icon: Icon(Icons.meeting_room),
                 label: 'Spaces',
-            ),
+            ),*/
             BottomNavigationBarItem(
-              icon: Icon(Icons.groups),
-              label: 'Groups',
-            ),
-            /*
+                icon: Icon(Icons.logout),
+                label: 'Logout'),
             BottomNavigationBarItem(
-              icon: Icon(Icons.logout),
-              label: 'Logout',
-            ),
-            */
-
-      ]))
+                icon: Icon(Icons.groups),
+                label: 'Groups'),
+          ],
+        ),
+      ),
     );
   }
 }

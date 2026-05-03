@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:focus_n_flow/models/study_session_model.dart';
 import 'package:focus_n_flow/repositories/study_session_repository.dart';
+import '../models/session_participant_model.dart';
 
 class StudySessionService {
   final StudySessionRepository _repository;
@@ -19,6 +20,10 @@ class StudySessionService {
 
   Stream<StudySession?> watchSession(String sessionId) {
     return _repository.watchSession(sessionId);
+  }
+
+  Stream<List<SessionParticipant>> watchParticipants(String sessionId) {
+    return _repository.watchParticipants(sessionId);
   }
 
   Future<List<StudySession>> getOverlappingRoomSessions({
@@ -348,7 +353,7 @@ class StudySessionService {
   /*
   validation helper methods
    */
-
+  String? get currentUserId => _auth.currentUser?.uid;
   User? get _currentUser => _auth.currentUser;
 
   String? _validateSignedIn(User? user, String action) {

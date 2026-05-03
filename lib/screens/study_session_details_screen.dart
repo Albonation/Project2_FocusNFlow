@@ -4,6 +4,8 @@ import 'package:focus_n_flow/models/study_session_model.dart';
 import 'package:focus_n_flow/models/session_participant_model.dart';
 import 'package:focus_n_flow/services/study_session_service.dart';
 import 'package:focus_n_flow/screens/create_study_session_screen.dart';
+import 'package:focus_n_flow/widgets/study_session_widgets/shared_timer_card.dart';
+import 'package:focus_n_flow/widgets/study_session_widgets/session_goals_section.dart';
 import 'package:focus_n_flow/theme/app_theme_extensions.dart';
 import 'package:focus_n_flow/theme/app_spacing.dart';
 import 'package:focus_n_flow/theme/app_corners.dart';
@@ -228,6 +230,18 @@ class _StudySessionDetailsScreenState extends State<StudySessionDetailsScreen> {
                   ),
 
                   AppSpacing.gapXl,
+
+                  SessionGoalsSection(sessionId: session.id),
+
+                  AppSpacing.gapXl,
+
+                  if (session.status == StudySessionStatus.active) ...[
+                    SharedTimerCard(sessionId: session.id),
+                    AppSpacing.gapXl,
+                  ] else ...[
+                    _SharedTimerUnavailableCard(session: session),
+                    AppSpacing.gapXl,
+                  ],
 
                   _SessionActionsSection(
                     session: session,
@@ -481,6 +495,67 @@ class _SessionParticipationCard extends StatelessWidget {
                 ),
               ),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SharedTimerUnavailableCard extends StatelessWidget {
+  final StudySession session;
+
+  const _SharedTimerUnavailableCard({required this.session});
+
+  @override
+  Widget build(BuildContext context) {
+    final message = switch (session.status) {
+      StudySessionStatus.scheduled =>
+        'Start this session to use the shared study timer.',
+      StudySessionStatus.completed =>
+        'This session has ended, so the shared timer is no longer active.',
+      StudySessionStatus.cancelled =>
+        'This session was cancelled, so the shared timer is unavailable.',
+      StudySessionStatus.active =>
+        'The shared timer is available for this active session.',
+    };
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: AppSpacing.card,
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: context.appColors.focus.withValues(alpha: 0.15),
+              foregroundColor: context.appColors.focus,
+              child: const Icon(Icons.timer_outlined),
+            ),
+
+            AppSpacing.horizontalGapMd,
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Shared Study Timer',
+                    style: context.text.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  AppSpacing.gapXs,
+
+                  Text(
+                    message,
+                    style: context.text.bodySmall?.copyWith(
+                      color: context.colors.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

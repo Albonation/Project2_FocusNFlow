@@ -48,7 +48,7 @@ class _AddEditTaskFormState extends State<AddEditTask> {
       hoursController.text = task.estimatedHours.toString();
       selectedDate = task.deadline;
       selectedCourseId = task.courseId;
-      deadlineController.text = _formatDate(task.deadline);
+      deadlineController.text = _formatDateTime(task.deadline);
     }
   }
 
@@ -61,24 +61,66 @@ class _AddEditTaskFormState extends State<AddEditTask> {
     super.dispose();
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.month}/${date.day}/${date.year}';
+  String _formatDateTime(DateTime dateTime) {
+    return '${dateTime.month}/${dateTime.day}/${dateTime.year} at ${_formatTime(dateTime)}';
   }
 
-  Future<void> pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDate ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
+  String _formatTime(DateTime dateTime) {
+    final hour = dateTime.hour;
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    final period = hour >= 12 ? 'PM' : 'AM';
+    final displayHour = hour == 0
+        ? 12
+        : hour > 12
+        ? hour - 12
+        : hour;
+
+    return '$displayHour:$minute $period';
+  }
+
+  Future<void> pickDeadlineDateTime() async {
+    final picked = await _pickDateTime(
+      initialDateTime: selectedDate ?? DateTime.now().add(
+        const Duration(hours: 1),
+      ),
     );
 
-    if (picked != null) {
-      setState(() {
-        selectedDate = picked;
-        deadlineController.text = _formatDate(picked);
-      });
-    }
+    if (picked == null) return;
+
+    setState(() {
+      selectedDate = picked;
+      deadlineController.text = _formatDateTime(picked);
+    });
+  }
+
+  Future<DateTime?> _pickDateTime({
+    required DateTime initialDateTime,
+  }) async {
+    final now = DateTime.now();
+
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: initialDateTime.isBefore(now) ? now : initialDateTime,
+      firstDate: DateTime(now.year, now.month, now.day),
+      lastDate: now.add(const Duration(days: 365 * 5)),
+    );
+
+    if (pickedDate == null || !mounted) return null;
+
+    final pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(initialDateTime),
+    );
+
+    if (pickedTime == null) return null;
+
+    return DateTime(
+      pickedDate.year,
+      pickedDate.month,
+      pickedDate.day,
+      pickedTime.hour,
+      pickedTime.minute,
+    );
   }
 
   Future<void> saveTask() async {
@@ -97,6 +139,10 @@ class _AddEditTaskFormState extends State<AddEditTask> {
     if (selectedDate == null) {
       _showMessage('Please select a deadline.');
       return;
+    }
+
+    if (selectedDate!.isBefore(DateTime.now())) {
+      _showMessage('Deadline must be in the future');
     }
 
     final task = Task(
@@ -260,10 +306,10 @@ class _AddEditTaskFormState extends State<AddEditTask> {
           TextField(
             controller: deadlineController,
             readOnly: true,
-            onTap: pickDate,
+            onTap: pickDeadlineDateTime,
             decoration: const InputDecoration(
               labelText: 'Deadline',
-              hintText: 'Select Deadline',
+              hintText: 'Select Deadline date and time',
               suffixIcon: Icon(Icons.calendar_today),
             ),
           ),

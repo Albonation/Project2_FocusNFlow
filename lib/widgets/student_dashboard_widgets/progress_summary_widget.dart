@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:focus_n_flow/models/task_model.dart';
+import 'package:focus_n_flow/screens/courses_tasks_screen.dart';
 import 'package:focus_n_flow/services/student_dashboard_service.dart';
 import 'package:focus_n_flow/theme/app_spacing.dart';
 
@@ -49,72 +50,67 @@ class ProgressSummary extends StatelessWidget {
         final overdueCount = service.countOverdueTasks(tasks);
         final topPriorityTasks = service.getTopPriorityTasks(tasks);
 
-        return Card(
-          child: Padding(
-            padding: AppSpacing.card,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Task Summary',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-
-                AppSpacing.gapMd,
-                _SummaryRow(
-                  label: 'Pending',
-                  value: pendingCount.toString(),
-                  icon: Icons.radio_button_unchecked,
-                ),
-
-                _SummaryRow(
-                  label: 'In Progress',
-                  value: inProgressCount.toString(),
-                  icon: Icons.timelapse,
-                ),
-
-                _SummaryRow(
-                  label: 'Completed Today',
-                  value: completedTodayCount.toString(),
-                  icon: Icons.check_circle_outline,
-                ),
-
-                _SummaryRow(
-                  label: 'Overdue',
-                  value: overdueCount.toString(),
-                  icon: Icons.warning_amber,
-                ),
-
-                if (topPriorityTasks.isNotEmpty) ...[
-                  AppSpacing.gapLg,
-                  const Divider(),
-                  AppSpacing.gapSm,
-
+        return InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const CoursesTasksScreen(),
+              ),
+            );
+          },
+          child: Card(
+            child: Padding(
+              padding: AppSpacing.card,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   const Text(
-                    'Top Priority',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    'Task Summary',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
-
-                  AppSpacing.gapSm,
-                  ...topPriorityTasks.map(
-                    (task) => Padding(
-                      padding: AppSpacing.rowPadding,
-                      child: Row(
-                        children: [
-                          const Icon(Icons.priority_high, size: 18),
-                          AppSpacing.horizontalGapSm,
-                          Expanded(
-                            child: Text(
-                              task.title,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
+                  AppSpacing.gapMd,
+                  _SummaryRow(
+                    label: 'Pending',
+                    value: pendingCount.toString(),
+                    icon: Icons.radio_button_unchecked,
+                  ),
+                  _SummaryRow(
+                    label: 'In Progress',
+                    value: inProgressCount.toString(),
+                    icon: Icons.timelapse,
+                  ),
+                  _SummaryRow(
+                    label: 'Completed Today',
+                    value: completedTodayCount.toString(),
+                    icon: Icons.check_circle_outline,
+                  ),
+                  _SummaryRow(
+                    label: 'Overdue',
+                    value: overdueCount.toString(),
+                    icon: Icons.warning_amber,
+                  ),
+                  
+                  if (topPriorityTasks.isNotEmpty) ...[
+                    AppSpacing.gapLg,
+                    const Text(
+                      'Top Priority Tasks',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
-                  ),
+                    AppSpacing.gapSm,
+                    ...topPriorityTasks.map((task) => Padding(
+                          padding: AppSpacing.rowPadding,
+                          child: Row(
+                            children: [
+                              const Icon(Icons.star, size: 16, color: Colors.amber),
+                              AppSpacing.horizontalGapSm,
+                              Expanded(child: Text(task.title)),
+                            ],
+                          ),
+                        )),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         );

@@ -56,32 +56,23 @@ class _StudentDashboardState extends State<StudentDashboardScreen> {
     final userId = _userId;
 
     if (userId == null) {
-      return const Scaffold(body: Center(child: Text("No user logged in")));
+      return const Center(child: Text("No user logged in"));
     }
 
     final taskStream = _taskRepository.getTasksForUser(userId);
 
-    return Scaffold(
-      appBar: AppBar(title: Text("Welcome, $fullName"), centerTitle: true),
-
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: AppSpacing.tile,
-          child: Column(
-            children: [
-              // Today's Tasks
-              Tasks(stream: taskStream),
-              AppSpacing.gapXl,
-
-              // Upcoming Study Sessions
-              const UpcomingStudySessions(),
-              AppSpacing.gapXl,
-
-              // Progress Summary
-              ProgressSummary(stream: taskStream),
-              AppSpacing.gapXl,
-            ],
-          ),
+    return SingleChildScrollView(
+      child: Padding(
+        padding: AppSpacing.tile,
+        child: Column(
+          children: [
+            Tasks(stream: taskStream),
+            AppSpacing.gapXl,
+            const UpcomingStudySessions(),
+            AppSpacing.gapXl,
+            ProgressSummary(stream: taskStream),
+            AppSpacing.gapXl,
+          ],
         ),
       ),
     );

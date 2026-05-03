@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:focus_n_flow/screens/courses_tasks_screen.dart';
 import 'package:focus_n_flow/screens/profile_screen.dart';
 import 'package:focus_n_flow/screens/student_dashboard_screen.dart';
 import 'package:focus_n_flow/screens/weekly_planner_screen.dart';
@@ -17,70 +16,60 @@ class AppShell extends StatefulWidget{
 class _AppShellState extends State<AppShell> {
   int _selectedIndex = 0;
 
-  @override
-  void initState(){
-    super.initState();
-  
+  void _goToTab(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
   }
+
   Widget _buildScreen() {
     switch (_selectedIndex) {
       case 0:
         return const StudentDashboardScreen();
+
       case 1:
-        return const CoursesTasksScreen();
-      case 2:
         return const WeeklyPlanScreen();
-      case 3:
+
+      case 2:
         return const StudyRoomsScreen();
-      case 4:
+
+      case 3:
         return ProfileScreen(themeController: widget.themeController);
+
       default:
         return const StudentDashboardScreen();
     }
   }
 
   @override
-  Widget build(BuildContext context){
+  Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('FocusNFlow'),
+        centerTitle: true,
+      ),
       body: _buildScreen(),
-
-      bottomNavigationBar: DecoratedBox(
-        decoration: const BoxDecoration(
-          border: Border(
-            top: BorderSide(color: Colors.grey, width: 1),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _goToTab,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Dashboard',
           ),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: (index) {
-            setState(() {
-              _selectedIndex = index;
-            });
-          },
-
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: 'Dashboard',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.add_task),
-              label: 'View Tasks',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.checklist),
-              label: 'Weekly Planner',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.meeting_room),
-              label: 'Study Rooms',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person),
-              label: 'Profile',
-            ),
-          ],
-        ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.checklist),
+            label: 'Weekly Planner',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.meeting_room),
+            label: 'Study Rooms',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
       ),
     );
   }

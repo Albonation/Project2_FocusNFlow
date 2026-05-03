@@ -302,7 +302,10 @@ class StudySessionRepository {
   }) async {
     final roomId = sessionData['roomId'] as String?;
 
-    _validateRoomId(roomId);
+    //rooms are optional, if no room then no room state to clean up
+    if (roomId == null || roomId.trim().isEmpty) {
+      return;
+    }
 
     final roomRef = _roomRef(roomId!);
     final roomDoc = await transaction.get(roomRef);

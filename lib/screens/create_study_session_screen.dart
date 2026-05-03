@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:focus_n_flow/models/study_group_model.dart';
 import 'package:focus_n_flow/models/study_session_model.dart';
+import 'package:focus_n_flow/models/study_room_model.dart';
 import 'package:focus_n_flow/services/study_session_service.dart';
+import 'package:focus_n_flow/screens/study_room_picker_screen.dart';
 import 'package:focus_n_flow/theme/app_spacing.dart';
 import 'package:focus_n_flow/theme/app_theme_extensions.dart';
 
@@ -119,14 +121,35 @@ class _CreateStudySessionScreenState extends State<CreateStudySessionScreen> {
     );
   }
 
-  Future<void> _chooseRoomPlaceholder() async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Room finder selection mode will be wired in next.'),
+  Future<void> _chooseRoom() async {
+    if (!_startsAt.isBefore(_endsAt)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Choose a valid start and end time before selecting a room.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final selectedRoom = await Navigator.push<StudyRoom>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => StudyRoomPickerScreen(
+          startsAt: _startsAt,
+          endsAt: _endsAt,
+          selectedRoomId: _roomId,
+        ),
       ),
     );
 
-    //##TODO build out choosing a study room as part of study session creation
+    if (!mounted || selectedRoom == null) return;
+
+    setState(() {
+      _roomId = selectedRoom.id;
+      _roomName = selectedRoom.name;
+    });
   }
 
   void _chooseCoursePlaceholder() {
@@ -285,7 +308,7 @@ class _CreateStudySessionScreenState extends State<CreateStudySessionScreen> {
               icon: Icons.meeting_room_outlined,
               iconColor: context.appColors.studyRoom,
               actionLabel: _roomName == null ? 'Choose Room' : 'Change',
-              onPressed: _chooseRoomPlaceholder,
+              onPressed: _chooseRoom,
               onClear: _roomName == null ? null : _clearRoom,
             ),
 

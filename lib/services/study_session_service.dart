@@ -102,12 +102,9 @@ class StudySessionService {
         }
       }
 
-      final now = DateTime.now();
-
-      //##TODO when room selection is wired in, handle immediately active session
-      final status = startsAt.isAfter(now)
-          ? StudySessionStatus.scheduled
-          : StudySessionStatus.active;
+      //new sessions always start as scheduled
+      //keeps status changes to start session and complete sessions
+      final status = StudySessionStatus.scheduled;
 
       final session = StudySession(
         id: '',
@@ -129,7 +126,7 @@ class StudySessionService {
         participantCount: 0,
         reminderSent: false,
         isActive: true,
-        startedBy: status == StudySessionStatus.active ? user.uid : null,
+        startedBy: null,
       );
 
       final sessionId = await _repository.createSession(session);

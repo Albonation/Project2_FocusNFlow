@@ -6,6 +6,7 @@ import 'package:focus_n_flow/theme/app_spacing.dart';
 import 'package:focus_n_flow/theme/app_theme_extensions.dart';
 import 'package:focus_n_flow/widgets/study_session_widgets/study_sessions_section.dart';
 import 'package:focus_n_flow/screens/create_study_session_screen.dart';
+import 'package:focus_n_flow/screens/study_session_details_screen.dart';
 
 class GroupDetailsScreen extends StatelessWidget {
   final StudyGroup group;
@@ -37,7 +38,7 @@ class GroupDetailsScreen extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => CreateStudySessionScreen(
+        builder: (_) => StudySessionDetailsScreen(
           group: group,
           session: session,
         ),

@@ -19,18 +19,26 @@ class StudyRoomService {
     return _repository.getStudyRooms();
   }
 
+  Stream<List<StudyRoom>> watchSelectableStudyRooms() {
+    return _repository.watchSelectableStudyRooms();
+  }
+
+  Future<List<StudyRoom>> getSelectableStudyRooms() {
+    return _repository.getSelectableStudyRooms();
+  }
+
   //streams study rooms filtered by building
   Stream<List<StudyRoom>> watchRoomsByBuilding(String building) {
     return _repository.watchRoomsByBuilding(building);
   }
 
-  //streams the user's global study room membership document
+  /*//streams the user's global study room membership document
   Stream<String?> watchCurrentJoinedRoomId(String userId) {
     if (userId.trim().isEmpty) {
       throw ArgumentError('User ID cannot be empty.');
     }
     return _repository.watchCurrentJoinedRoomId(userId);
-  }
+  }*/
 
   //fetches a single study room by ID
   Future<StudyRoom?> getStudyRoomById(String roomId) {
@@ -47,7 +55,7 @@ class StudyRoomService {
     return _repository.watchAvailableStudyRooms();
   }
 
-  //allows a user to join a room, returns true if successful
+  /*//allows a user to join a room, returns true if successful
   Future<bool> joinRoom({
     required String roomId,
     required String userId,
@@ -75,7 +83,7 @@ class StudyRoomService {
     _validateIds(roomId: roomId, userId: userId);
 
     return _repository.isUserInRoom(roomId: roomId, userId: userId);
-  }
+  }*/
 
   //create and update study rooms
   Future<void> addStudyRoom(StudyRoom room) {
@@ -93,7 +101,7 @@ class StudyRoomService {
     return _repository.deactivateStudyRoom(roomId);
   }
 
-  //helper method to validate that roomId and userId are not empty or just whitespace
+  /*//helper method to validate that roomId and userId are not empty or just whitespace
   void _validateIds({required String roomId, required String userId}) {
     if (roomId.trim().isEmpty) {
       throw ArgumentError.value(roomId, 'roomId', 'roomId cannot be empty.');
@@ -102,5 +110,5 @@ class StudyRoomService {
     if (userId.trim().isEmpty) {
       throw ArgumentError.value(userId, 'userId', 'userId cannot be empty.');
     }
-  }
+  }*/
 }

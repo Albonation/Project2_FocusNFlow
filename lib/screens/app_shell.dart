@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:focus_n_flow/screens/courses_tasks_screen.dart';
 import 'package:focus_n_flow/screens/profile_screen.dart';
 import 'package:focus_n_flow/screens/student_dashboard_screen.dart';
-import 'package:focus_n_flow/screens/study_rooms_screen.dart';
 import 'package:focus_n_flow/screens/groups_screen.dart';
 import '../theme/theme_controller.dart';
 
@@ -29,8 +28,8 @@ class _AppShellState extends State<AppShell> {
       StudentDashboardScreen(),
       CoursesTasksScreen(),
       ProfileScreen(themeController: widget.themeController),
-      StudyRoomsScreen(),
       GroupsScreen(),
+      //StudyRoomsScreen(),
       //WeeklyPlannerScreen(),
     ];
   }
@@ -52,7 +51,7 @@ class _AppShellState extends State<AppShell> {
         child: BottomNavigationBar(
           currentIndex: _selectedIndex,
           onTap: (index) async {
-            if (index == 3) {
+            if (index == 4) {
               await _logout();
               return;
             }
@@ -69,6 +68,15 @@ class _AppShellState extends State<AppShell> {
                 icon: Icon(Icons.add_task),
                 label: 'View Tasks',
             ),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.person),
+                label: 'Profile'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.groups),
+                label: 'Groups'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.logout),
+                label: 'Logout'),
             //Placeholder for unfinished screens.
             //Commented out for testing
             //BottomNavigationBarItem(
@@ -79,19 +87,10 @@ class _AppShellState extends State<AppShell> {
             //  icon: Icon(Icons.checklist),
             //  label: 'Weekly Planner',
             //),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.person),
-                label: 'Profile'),
             /*BottomNavigationBarItem(
                 icon: Icon(Icons.meeting_room),
                 label: 'Spaces',
             ),*/
-            BottomNavigationBarItem(
-                icon: Icon(Icons.logout),
-                label: 'Logout'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.groups),
-                label: 'Groups'),
           ],
         ),
       ),

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:focus_n_flow/models/task_model.dart';
 import 'package:focus_n_flow/screens/courses_tasks_screen.dart';
 import 'package:focus_n_flow/services/student_dashboard_service.dart';
+import 'package:focus_n_flow/theme/app_corners.dart';
 import 'package:focus_n_flow/theme/app_spacing.dart';
+import 'package:focus_n_flow/theme/app_theme_extensions.dart';
 
 class ProgressSummary extends StatelessWidget {
   final Stream<List<Task>> stream;
@@ -10,12 +12,20 @@ class ProgressSummary extends StatelessWidget {
 
   ProgressSummary({super.key, required this.stream});
 
+  void _openCoursesTasksScreen(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const CoursesTasksScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<Task>>(
       stream: stream,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
           return const Card(
             child: Padding(
               padding: AppSpacing.card,
@@ -28,7 +38,12 @@ class ProgressSummary extends StatelessWidget {
           return Card(
             child: Padding(
               padding: AppSpacing.card,
-              child: Text('Unable to load task summary: ${snapshot.error}'),
+              child: Text(
+                'Unable to load task summary: ${snapshot.error}',
+                style: context.text.bodyMedium?.copyWith(
+                  color: context.colors.error,
+                ),
+              ),
             ),
           );
         }
@@ -36,11 +51,10 @@ class ProgressSummary extends StatelessWidget {
         final tasks = snapshot.data ?? [];
 
         if (tasks.isEmpty) {
-          return const Card(
-            child: Padding(
-              padding: AppSpacing.card,
-              child: Text('No tasks to summarize yet.'),
-            ),
+          return _EmptyProgressSummaryCard(
+            onOpenCoursesTasks: () {
+              _openCoursesTasksScreen(context);
+            },
           );
         }
 
@@ -51,13 +65,9 @@ class ProgressSummary extends StatelessWidget {
         final topPriorityTasks = service.getTopPriorityTasks(tasks);
 
         return InkWell(
+          borderRadius: BorderRadius.circular(AppCorners.lg),
           onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const CoursesTasksScreen(),
-              ),
-            );
+            _openCoursesTasksScreen(context);
           },
           child: Card(
             child: Padding(
@@ -65,11 +75,15 @@ class ProgressSummary extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Task Summary',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: context.text.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
+
                   AppSpacing.gapMd,
+
                   _SummaryRow(
                     label: 'Pending',
                     value: pendingCount.toString(),
@@ -90,24 +104,41 @@ class ProgressSummary extends StatelessWidget {
                     value: overdueCount.toString(),
                     icon: Icons.warning_amber,
                   ),
-                  
+
                   if (topPriorityTasks.isNotEmpty) ...[
                     AppSpacing.gapLg,
-                    const Text(
+
+                    Text(
                       'Top Priority Tasks',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: context.text.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
+
                     AppSpacing.gapSm,
-                    ...topPriorityTasks.map((task) => Padding(
-                          padding: AppSpacing.rowPadding,
-                          child: Row(
-                            children: [
-                              const Icon(Icons.star, size: 16, color: Colors.amber),
-                              AppSpacing.horizontalGapSm,
-                              Expanded(child: Text(task.title)),
-                            ],
-                          ),
-                        )),
+
+                    ...topPriorityTasks.map(
+                      (task) => Padding(
+                        padding: AppSpacing.rowPadding,
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.star,
+                              size: 16,
+                              color: context.appColors.planner,
+                            ),
+                            AppSpacing.horizontalGapSm,
+                            Expanded(
+                              child: Text(
+                                task.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ],
               ),
@@ -115,6 +146,61 @@ class ProgressSummary extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _EmptyProgressSummaryCard extends StatelessWidget {
+  final VoidCallback onOpenCoursesTasks;
+
+  const _EmptyProgressSummaryCard({required this.onOpenCoursesTasks});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: AppSpacing.card,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Task Summary',
+              style: context.text.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            AppSpacing.gapMd,
+
+            Text(
+              'No tasks to summarize yet',
+              style: context.text.bodyMedium?.copyWith(
+                color: context.colors.onSurfaceVariant,
+              ),
+            ),
+
+            AppSpacing.gapMd,
+
+            Text(
+              'Add your courses and tasks to unlock the dashboard summary',
+              style: context.text.bodySmall?.copyWith(
+                color: context.colors.onSurfaceVariant,
+              ),
+            ),
+
+            AppSpacing.gapLg,
+
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: onOpenCoursesTasks,
+                icon: const Icon(Icons.add_task_outlined),
+                label: const Text('Add Courses & Tasks'),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -136,10 +222,15 @@ class _SummaryRow extends StatelessWidget {
       padding: AppSpacing.rowPadding,
       child: Row(
         children: [
-          Icon(icon, size: 20),
+          Icon(icon, size: 20, color: context.colors.onSurfaceVariant),
           AppSpacing.horizontalGapSm,
-          Expanded(child: Text(label)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Expanded(child: Text(label, style: context.text.bodyMedium)),
+          Text(
+            value,
+            style: context.text.bodyMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );

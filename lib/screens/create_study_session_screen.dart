@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:focus_n_flow/models/study_group_model.dart';
 import 'package:focus_n_flow/models/study_session_model.dart';
+import 'package:focus_n_flow/models/course_model.dart';
 import 'package:focus_n_flow/models/study_room_model.dart';
 import 'package:focus_n_flow/services/study_session_service.dart';
 import 'package:focus_n_flow/screens/study_room_picker_screen.dart';
+import 'package:focus_n_flow/widgets/study_session_widgets/course_picker_widget.dart';
 import 'package:focus_n_flow/theme/app_spacing.dart';
 import 'package:focus_n_flow/theme/app_theme_extensions.dart';
 
@@ -152,12 +154,22 @@ class _CreateStudySessionScreenState extends State<CreateStudySessionScreen> {
     });
   }
 
-  void _chooseCoursePlaceholder() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Course picker will be wired in later.')),
+  Future<void> _chooseCourse() async {
+    final selectedCourse = await Navigator.push<Course>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CoursePickerScreen(
+          selectedCourseId: _courseId,
+        ),
+      ),
     );
 
-    //##TODO build out choosing a course as part of study session creation
+    if (!mounted || selectedCourse == null) return;
+
+    setState(() {
+      _courseId = selectedCourse.id;
+      _courseCode = selectedCourse.courseCode;
+    });
   }
 
   void _clearRoom() {
@@ -296,7 +308,7 @@ class _CreateStudySessionScreenState extends State<CreateStudySessionScreen> {
               icon: Icons.school_outlined,
               iconColor: context.appColors.task,
               actionLabel: _courseCode == null ? 'Choose Course' : 'Change',
-              onPressed: _chooseCoursePlaceholder,
+              onPressed: _chooseCourse,
               onClear: _courseCode == null ? null : _clearCourse,
             ),
 

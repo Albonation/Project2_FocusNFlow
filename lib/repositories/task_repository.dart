@@ -4,7 +4,6 @@
 //importing necessary packages
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:focus_n_flow/repositories/planner_firesto_repository.dart';
 import '../models/task_model.dart';
 
 class TaskRepository {

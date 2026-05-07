@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:focus_n_flow/models/course_model.dart';
-import 'package:focus_n_flow/repositories/course_repository.dart';
 import 'package:focus_n_flow/services/course_service.dart';
 import 'package:focus_n_flow/theme/app_spacing.dart';
 import 'package:focus_n_flow/theme/app_theme_extensions.dart';

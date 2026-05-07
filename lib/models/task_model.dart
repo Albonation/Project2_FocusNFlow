@@ -41,7 +41,9 @@ extension TaskStatusExtension on TaskStatus {
 
 enum ImportanceLevel { low, normal, high;
 
-  Object? operator /(double other) {} }
+  Object? operator /(double other) {
+    return null;
+  } }
 
 extension ImportanceLevelExtension on ImportanceLevel {
   String get value {
